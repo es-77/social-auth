@@ -641,8 +641,9 @@ This package is open-sourced software licensed under the [MIT license](LICENSE).
 
 **Emmanuel Saleem**
 
-- Email: your@email.com
-- GitHub: [@emmanuel-saleem](https://github.com/emmanuel-saleem)
+- Email: emmanuelsaleem098765@gmail.com
+- LinkedIn: [linkedin.com/in/es77](https://pk.linkedin.com/in/es77)
+- GitHub: [@emmanuel-saleem](https://github.com/es-77)
 
 ---
 
@@ -660,7 +661,7 @@ If you encounter any issues or have questions:
 
 1. Check the [OAUTH_API_GUIDE.md](./OAUTH_API_GUIDE.md)
 2. Review [Troubleshooting](#-troubleshooting) section
-3. Check existing [GitHub Issues](https://github.com/emmanuel-saleem/social-auth/issues)
+3. Check existing [GitHub Issues](https://github.com/es-77/social-auth/social-auth/issues)
 4. Create a new issue with detailed information
 
 ---
