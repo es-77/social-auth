@@ -3,7 +3,6 @@
 namespace EmmanuelSaleem\SocialAuth\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -56,8 +55,11 @@ class ApiOAuthController extends Controller
                 ->stateless()
                 ->user();
 
+            // Get configured user model
+            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+
             // Find or create user
-            $user = User::where('google_id', $googleUser->id)
+            $user = $userModel::where('google_id', $googleUser->id)
                 ->orWhere('email', $googleUser->email)
                 ->first();
 
@@ -71,7 +73,7 @@ class ApiOAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $user = User::create([
+                $user = $userModel::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
                     'google_id' => $googleUser->id,
@@ -159,8 +161,11 @@ class ApiOAuthController extends Controller
                 ->stateless()
                 ->user();
 
+            // Get configured user model
+            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+
             // Find or create user
-            $user = User::where('microsoft_id', $microsoftUser->id)
+            $user = $userModel::where('microsoft_id', $microsoftUser->id)
                 ->orWhere('email', $microsoftUser->email)
                 ->first();
 
@@ -174,7 +179,7 @@ class ApiOAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $user = User::create([
+                $user = $userModel::create([
                     'name' => $microsoftUser->name,
                     'email' => $microsoftUser->email,
                     'microsoft_id' => $microsoftUser->id,

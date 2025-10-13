@@ -3,7 +3,6 @@
 namespace EmmanuelSaleem\SocialAuth\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -28,7 +27,8 @@ class SocialAuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->user();
             
-            $user = User::where('google_id', $googleUser->id)
+            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $user = $userModel::where('google_id', $googleUser->id)
                        ->orWhere('email', $googleUser->email)
                        ->first();
 
@@ -71,7 +71,8 @@ class SocialAuthController extends Controller
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
             
-            $user = User::where('google_id', $googleUser->id)
+            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $user = $userModel::where('google_id', $googleUser->id)
                        ->orWhere('email', $googleUser->email)
                        ->first();
 
@@ -83,7 +84,7 @@ class SocialAuthController extends Controller
                     'google_refresh_token' => $googleUser->refreshToken,
                 ]);
             } else {
-                $user = User::create([
+                $user = $userModel::create([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
                     'google_id' => $googleUser->id,
@@ -147,7 +148,8 @@ class SocialAuthController extends Controller
         try {
             $microsoftUser = Socialite::driver('microsoft')->user();
             
-            $user = User::where('microsoft_id', $microsoftUser->id)
+            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $user = $userModel::where('microsoft_id', $microsoftUser->id)
                        ->orWhere('email', $microsoftUser->email)
                        ->first();
 
@@ -161,7 +163,7 @@ class SocialAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $user = User::create([
+                $user = $userModel::create([
                     'name' => $microsoftUser->name,
                     'email' => $microsoftUser->email,
                     'microsoft_id' => $microsoftUser->id,

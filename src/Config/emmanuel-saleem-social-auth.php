@@ -130,4 +130,15 @@ return [
         'token_name' => 'oauth-token',
         'scopes' => [], // Add scopes if needed
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Model
+    |--------------------------------------------------------------------------
+    |
+    | Specify your application's User model class
+    | This allows the package to work with different User model locations
+    |
+    */
+    'user_model' => env('AUTH_USER_MODEL', 'App\\Models\\User'),
 ];
