@@ -59,7 +59,10 @@ class SocialAuthController extends Controller
             return redirect()->intended(config('emmanuel-saleem-social-auth.redirect_after_login'));
             
         } catch (\Exception $e) {
-            return redirect()->route('emmanuel-saleem.social-auth.login')->with('error', 'Failed to login with Google. Please try again.');
+            \Log::error('Google OAuth Error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return redirect()->route('emmanuel-saleem.social-auth.login')
+                ->with('error', 'Failed to login with Google: ' . $e->getMessage());
         }
     }
 
@@ -180,7 +183,10 @@ class SocialAuthController extends Controller
             return redirect()->intended(config('emmanuel-saleem-social-auth.redirect_after_login'));
             
         } catch (\Exception $e) {
-            return redirect()->route('emmanuel-saleem.social-auth.login')->with('error', 'Failed to login with Microsoft. Please try again.');
+            \Log::error('Microsoft OAuth Error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return redirect()->route('emmanuel-saleem.social-auth.login')
+                ->with('error', 'Failed to login with Microsoft: ' . $e->getMessage());
         }
     }
 }
