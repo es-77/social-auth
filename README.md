@@ -6,6 +6,20 @@ A comprehensive Laravel package for OAuth social authentication with Google and 
 [![Laravel](https://img.shields.io/badge/Laravel-9%20%7C%2010%20%7C%2011-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-blue.svg)](https://php.net)
 
+## 📚 Table of Contents
+
+- [Features](#-features)
+- [Requirements](#-requirements)
+- [Installation](#-installation)
+- [Quick Start - Add Login to Your App](#-quick-start---add-login-to-your-app) ⭐
+- [Configuration](#️-configuration)
+- [Usage (Web & API)](#-usage)
+- [Customization](#-customization)
+- [Troubleshooting](#-troubleshooting)
+- [Documentation](#-documentation)
+
+---
+
 ## ✨ Features
 
 - 🔐 **Google OAuth** authentication (Web & API)
@@ -262,6 +276,576 @@ GOOGLE_REDIRECT_URI=http://localhost:8000/emmanuel-saleem/social-auth/google/cal
 
 ---
 
+## 🚀 Quick Start - Add Login to Your App
+
+### How to Add Google & Microsoft Login
+
+After installation, you have **3 easy ways** to add social login to your application:
+
+#### **Method 1: Use the Pre-built Login Page (Easiest)**
+
+Simply redirect users to the package's built-in login page:
+
+```blade
+{{-- In your welcome.blade.php or any view --}}
+<a href="{{ route('emmanuel-saleem.social-auth.login') }}" class="btn btn-primary">
+    Login with Social Account
+</a>
+```
+
+Visit: `http://localhost:8000/emmanuel-saleem/social-auth/login`
+
+The page will show beautiful Google and Microsoft login buttons automatically! ✨
+
+---
+
+#### **Method 2: Include the Component in Your Own Page**
+
+Add the social auth buttons to any existing page:
+
+```blade
+{{-- resources/views/auth/login.blade.php --}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - My App</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f5f5f5;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 450px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>Welcome to My App</h1>
+        <p>Sign in to continue</p>
+        
+        {{-- Include the social auth component --}}
+        @include('emmanuel-saleem-social-auth::login')
+    </div>
+</body>
+</html>
+```
+
+**That's it!** Both Google and Microsoft buttons will appear with icons and proper styling.
+
+---
+
+#### **Method 3: Create Your Own Custom Buttons**
+
+Use the package routes directly for full customization:
+
+```blade
+{{-- Your custom login page --}}
+<div class="custom-login">
+    <h2>Sign In</h2>
+    
+    {{-- Google Login Button --}}
+    <a href="{{ route('emmanuel-saleem.social-auth.google') }}" class="btn-google">
+        <img src="/google-icon.svg" alt="Google">
+        Sign in with Google
+    </a>
+    
+    {{-- Microsoft Login Button --}}
+    <a href="{{ route('emmanuel-saleem.social-auth.microsoft') }}" class="btn-microsoft">
+        <img src="/microsoft-icon.svg" alt="Microsoft">
+        Sign in with Microsoft
+    </a>
+</div>
+
+<style>
+    .btn-google {
+        background: #4285f4;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-block;
+        margin: 5px;
+    }
+    
+    .btn-microsoft {
+        background: #00a4ef;
+        color: white;
+        padding: 12px 24px;
+        border-radius: 4px;
+        text-decoration: none;
+        display: inline-block;
+        margin: 5px;
+    }
+</style>
+```
+
+---
+
+#### **Logout Button**
+
+Add a logout button anywhere in your app:
+
+```blade
+<form action="{{ route('emmanuel-saleem.social-auth.logout') }}" method="POST">
+    @csrf
+    <button type="submit">Logout</button>
+</form>
+```
+
+---
+
+### 🎯 What Happens After Login?
+
+1. **User clicks** "Sign in with Google" or "Sign in with Microsoft"
+2. **Redirects to** Google/Microsoft for authentication
+3. **User approves** the login request
+4. **Redirects back** to your app with user data
+5. **Package automatically**:
+   - Creates a new user (if doesn't exist)
+   - Updates existing user info
+   - Logs them in
+   - Redirects to dashboard (configurable)
+
+**User is now logged in!** 🎉
+
+Access logged-in user anywhere:
+
+```php
+// In controllers
+$user = Auth::user();
+echo $user->name;
+echo $user->email;
+echo $user->avatar; // Profile picture URL
+echo $user->google_id; // or microsoft_id
+```
+
+```blade
+<!-- In Blade views -->
+@auth
+    <p>Welcome, {{ Auth::user()->name }}!</p>
+    <img src="{{ Auth::user()->avatar }}" alt="Profile">
+@endauth
+```
+
+---
+
+## 🌐 Complete Web Integration Guide
+
+### Step-by-Step: Add Social Login to Your Laravel Web App
+
+#### **Step 1: Create Your Login Page**
+
+Create or update your login blade file at `resources/views/auth/login.blade.php`:
+
+```blade
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - {{ config('app.name') }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 48px 40px;
+            max-width: 450px;
+            width: 100%;
+        }
+        
+        .logo-section {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        
+        .logo-section h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        
+        .logo-section p {
+            color: #666;
+            font-size: 15px;
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 24px 0;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .divider span {
+            padding: 0 12px;
+            color: #999;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-section">
+            <h1>Welcome Back!</h1>
+            <p>Sign in to continue to your account</p>
+        </div>
+
+        {{-- Social Auth Buttons Component --}}
+        @include('emmanuel-saleem-social-auth::login')
+
+        <div class="divider">
+            <span>or continue with email</span>
+        </div>
+
+        {{-- Your traditional email/password form (optional) --}}
+        <form method="POST" action="{{ route('login') }}" style="display: none;">
+            @csrf
+            <input type="email" name="email" placeholder="Email" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Sign In</button>
+        </form>
+
+        <p style="text-align: center; margin-top: 24px; color: #999; font-size: 13px;">
+            By signing in, you agree to our 
+            <a href="/terms" style="color: #667eea;">Terms</a> and 
+            <a href="/privacy" style="color: #667eea;">Privacy Policy</a>
+        </p>
+    </div>
+</body>
+</html>
+```
+
+#### **Step 2: Create a Route for Login Page**
+
+Add to `routes/web.php`:
+
+```php
+use Illuminate\Support\Facades\Route;
+
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login')->middleware('guest');
+```
+
+#### **Step 3: Update Your Welcome Page (Optional)**
+
+Add a login button to `resources/views/welcome.blade.php`:
+
+```blade
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Welcome</title>
+</head>
+<body>
+    <nav>
+        @guest
+            <a href="{{ route('login') }}">Login</a>
+        @else
+            <span>Hello, {{ Auth::user()->name }}</span>
+            <form action="{{ route('emmanuel-saleem.social-auth.logout') }}" method="POST" style="display: inline;">
+                @csrf
+                <button type="submit">Logout</button>
+            </form>
+        @endguest
+    </nav>
+
+    <h1>Welcome to My App</h1>
+</body>
+</html>
+```
+
+#### **Step 4: Create a Dashboard Page**
+
+Create `resources/views/dashboard.blade.php`:
+
+```blade
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .user-card {
+            background: #f5f5f5;
+            padding: 24px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .user-card img {
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+        }
+        .logout-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    @auth
+        <h1>Dashboard</h1>
+        
+        <div class="user-card">
+            <h2>Welcome, {{ Auth::user()->name }}!</h2>
+            
+            @if(Auth::user()->avatar)
+                <img src="{{ Auth::user()->avatar }}" alt="Profile Picture">
+            @endif
+            
+            <p><strong>Email:</strong> {{ Auth::user()->email }}</p>
+            <p><strong>Login Method:</strong> 
+                @if(Auth::user()->google_id)
+                    Google OAuth
+                @elseif(Auth::user()->microsoft_id)
+                    Microsoft OAuth
+                @else
+                    Email/Password
+                @endif
+            </p>
+            
+            @if(Auth::user()->google_id)
+                <p><strong>Google ID:</strong> {{ Auth::user()->google_id }}</p>
+            @endif
+            
+            @if(Auth::user()->microsoft_id)
+                <p><strong>Microsoft ID:</strong> {{ Auth::user()->microsoft_id }}</p>
+            @endif
+        </div>
+
+        <form action="{{ route('emmanuel-saleem.social-auth.logout') }}" method="POST">
+            @csrf
+            <button type="submit" class="logout-btn">Logout</button>
+        </form>
+    @else
+        <p>Please <a href="{{ route('login') }}">login</a> to continue.</p>
+    @endauth
+</body>
+</html>
+```
+
+#### **Step 5: Add Dashboard Route**
+
+Add to `routes/web.php`:
+
+```php
+Route::get('/dashboard', function () {
+    return view('dashboard');
+})->name('dashboard')->middleware('auth');
+```
+
+---
+
+### 🧪 Testing Your Social Login
+
+#### **Test 1: Visit Login Page**
+
+```
+http://localhost:8000/login
+```
+
+**Expected Result:**
+- ✅ See a beautiful login page
+- ✅ Two buttons: "Continue with Google" and "Continue with Microsoft"
+- ✅ Buttons have official brand colors and icons
+
+#### **Test 2: Click "Continue with Google"**
+
+**What Happens:**
+1. Redirects to Google login page
+2. Google asks for permission
+3. You approve
+4. Redirects back to your app
+5. Package creates/updates user
+6. Logs you in automatically
+7. Redirects to `/dashboard` (configurable)
+
+**Check Database:**
+```bash
+php artisan tinker
+```
+
+```php
+// In tinker
+User::latest()->first();
+// Should show user with google_id, avatar, etc.
+```
+
+#### **Test 3: Check User Data in Dashboard**
+
+Visit: `http://localhost:8000/dashboard`
+
+**Expected Result:**
+- ✅ See welcome message with your name
+- ✅ See your Google profile picture
+- ✅ See your email
+- ✅ See "Google OAuth" as login method
+- ✅ See Google ID
+
+#### **Test 4: Test Logout**
+
+Click the "Logout" button
+
+**Expected Result:**
+- ✅ Logged out successfully
+- ✅ Redirected to home page
+- ✅ Can't access `/dashboard` anymore
+
+#### **Test 5: Test Microsoft Login**
+
+Follow same steps but click "Continue with Microsoft"
+
+**Expected Result:**
+- ✅ Redirects to Microsoft login
+- ✅ User created with microsoft_id
+- ✅ Redirected to dashboard
+
+---
+
+### 🔍 Debugging & Verification
+
+#### **Check Routes Are Loaded**
+
+```bash
+php artisan route:list | grep emmanuel-saleem
+```
+
+**Expected Output:**
+```
+GET|HEAD  emmanuel-saleem/social-auth/login
+GET|HEAD  emmanuel-saleem/social-auth/google
+GET|HEAD  emmanuel-saleem/social-auth/google/callback
+GET|HEAD  emmanuel-saleem/social-auth/microsoft
+GET|HEAD  emmanuel-saleem/social-auth/microsoft/callback
+POST      emmanuel-saleem/social-auth/logout
+```
+
+#### **Check Database Table**
+
+```bash
+php artisan migrate:status
+```
+
+Should show the social auth migration as completed.
+
+```sql
+-- Check users table structure
+DESCRIBE users;
+```
+
+Should show columns:
+- `google_id`
+- `microsoft_id`
+- `avatar`
+- `google_token`
+- `google_refresh_token`
+- `microsoft_token`
+- `microsoft_refresh_token`
+
+#### **Check Logged-in User**
+
+In any controller or view:
+
+```php
+// Get current user
+$user = Auth::user();
+
+// Check if logged in
+if (Auth::check()) {
+    echo "User is logged in: " . Auth::user()->email;
+}
+
+// Check login method
+if ($user->google_id) {
+    echo "Logged in with Google";
+}
+
+if ($user->microsoft_id) {
+    echo "Logged in with Microsoft";
+}
+```
+
+---
+
+### 📸 Quick Test Checklist
+
+- [ ] Login page displays correctly
+- [ ] Google button works and redirects
+- [ ] Microsoft button works and redirects  
+- [ ] User is created in database
+- [ ] User data (name, email, avatar) is saved
+- [ ] User is automatically logged in
+- [ ] Dashboard shows user info
+- [ ] Logout works correctly
+- [ ] Can login again after logout
+- [ ] Avatar/profile picture displays
+
+---
+
+### 🎨 Customize Redirect After Login
+
+In `.env` file:
+
+```env
+# Redirect to custom page after login
+SOCIAL_AUTH_REDIRECT_AFTER_LOGIN=/dashboard
+SOCIAL_AUTH_REDIRECT_AFTER_LOGOUT=/
+```
+
+Or in `config/emmanuel-saleem-social-auth.php`:
+
+```php
+'redirect_after_login' => '/my-custom-page',
+'redirect_after_logout' => '/welcome',
+```
+
+---
+
 ## 🚀 Usage
 
 ### Option 1: Traditional Web Application
@@ -346,9 +930,71 @@ The package provides a reusable Blade component that you can include anywhere:
 
 ---
 
-### Option 2: API / SPA Application
+---
 
-For React, Vue, Next.js, or other frontend applications, use the API endpoints.
+### Option 2: API / SPA Application (React, Vue, Next.js)
+
+For modern frontend applications, use the API endpoints.
+
+#### **Frontend Login Flow**
+
+**Step 1:** User clicks "Sign in with Google" button
+
+**Step 2:** Get the OAuth URL from backend:
+
+```javascript
+// React/Vue/Next.js
+const handleGoogleLogin = async () => {
+  const response = await fetch('/api/emmanuel-saleem/auth/google/url');
+  const result = await response.json();
+  
+  if (result.status) {
+    // Redirect user to Google
+    window.location.href = result.data.url;
+  }
+};
+```
+
+**Step 3:** Handle the callback when user returns:
+
+```javascript
+// This runs on your callback page: /auth/google/callback
+useEffect(() => {
+  const code = new URLSearchParams(window.location.search).get('code');
+  
+  if (code) {
+    fetch('/api/emmanuel-saleem/auth/google/callback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    })
+    .then(res => res.json())
+    .then(result => {
+      if (result.status) {
+        // Save token
+        localStorage.setItem('token', result.data.token);
+        localStorage.setItem('user', JSON.stringify(result.data.user));
+        
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+      }
+    });
+  }
+}, []);
+```
+
+**Step 4:** Use the token for authenticated requests:
+
+```javascript
+fetch('/api/user/profile', {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    'Content-Type': 'application/json',
+  },
+});
+```
+
+For complete React/Vue examples, see [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md)
 
 #### API Routes Available
 
