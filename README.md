@@ -3,8 +3,8 @@
 A comprehensive Laravel package for OAuth social authentication with Google and Microsoft, supporting both traditional web applications and modern SPA/API-based frontends.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Laravel](https://img.shields.io/badge/Laravel-10%20%7C%2011-red.svg)](https://laravel.com)
-[![PHP](https://img.shields.io/badge/PHP-8.1%2B-blue.svg)](https://php.net)
+[![Laravel](https://img.shields.io/badge/Laravel-9%20%7C%2010%20%7C%2011-red.svg)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.0%2B-blue.svg)](https://php.net)
 
 ## ✨ Features
 
@@ -14,19 +14,21 @@ A comprehensive Laravel package for OAuth social authentication with Google and 
 - 🎨 **Pre-built Login UI** with beautiful, modern design
 - 📱 **Mobile-friendly** responsive design
 - 🔄 **Auto-migration** for adding social auth fields to users table
-- 🛡️ **Secure** token management with Laravel Sanctum
+- 🛡️ **Flexible Authentication**: Support for both **Laravel Sanctum** and **Laravel Passport**
+- 🔑 **Token Management**: Automatic token generation with expiration support
 - 📦 **Easy Installation** with Laravel auto-discovery
-- ⚙️ **Configurable** routes, middleware, and redirects
+- ⚙️ **Highly Configurable**: routes, middleware, redirects, button labels, and more
 - 🚀 **Production Ready** with comprehensive error handling
+- 📊 **Standardized API Responses** with consistent JSON format
 
 ---
 
 ## 📋 Requirements
 
-- PHP 8.1 or higher
-- Laravel 10.x or 11.x
+- PHP 8.0 or higher
+- Laravel 9.x, 10.x or 11.x
 - Laravel Socialite 5.x
-- Laravel Sanctum (for API authentication)
+- Laravel Sanctum (for API authentication - default) **OR** Laravel Passport (optional)
 
 ---
 
@@ -38,7 +40,9 @@ A comprehensive Laravel package for OAuth social authentication with Google and 
 composer require emmanuel-saleem/social-auth
 ```
 
-### Step 2: Install Laravel Sanctum (for API routes)
+### Step 2: Install Authentication System (for API routes)
+
+**Option A: Laravel Sanctum (Recommended - Default)**
 
 ```bash
 composer require laravel/sanctum
@@ -46,8 +50,19 @@ php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 php artisan migrate
 ```
 
+**Option B: Laravel Passport (For OAuth2 Server)**
+
+```bash
+composer require laravel/passport
+php artisan migrate
+php artisan passport:install
+```
+
+> 📖 **See [PASSPORT_SETUP.md](./PASSPORT_SETUP.md) for detailed Passport configuration**
+
 ### Step 3: Add HasApiTokens to User Model
 
+**For Sanctum (Default):**
 ```php
 <?php
 
@@ -74,6 +89,41 @@ class User extends Authenticatable
         'email_verified_at',
     ];
 }
+```
+
+**For Passport:**
+```php
+<?php
+
+namespace App\Models;
+
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Laravel\Passport\HasApiTokens; // Use Passport instead
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory, Notifiable;
+    
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'google_id',
+        'microsoft_id',
+        'avatar',
+        'google_token',
+        'google_refresh_token',
+        'microsoft_token',
+        'microsoft_refresh_token',
+        'email_verified_at',
+    ];
+}
+```
+
+Then configure the driver in `.env`:
+```env
+# For Passport (optional - default is Sanctum)
+SOCIAL_AUTH_API_DRIVER=passport
 ```
 
 ### Step 4: Publish Package Assets
@@ -561,6 +611,39 @@ curl -X POST http://localhost:8000/api/emmanuel-saleem/auth/google/callback \
 
 ## 🐛 Troubleshooting
 
+### Issue: Composer cache directory not writable (Docker)
+
+**Problem:**
+```
+Cannot create cache directory /.cache/composer/, or directory is not writable
+```
+
+**Solution:** Run composer with proper permissions or disable cache:
+```bash
+# Option 1: Fix permissions (if using Docker)
+docker exec -it your-container chown -R www-data:www-data /.cache
+
+# Option 2: Run composer without cache
+composer require emmanuel-saleem/social-auth --no-cache
+
+# Option 3: Run as the correct user
+docker exec -it -u www-data your-container composer require emmanuel-saleem/social-auth
+```
+
+### Issue: Laravel version conflict
+
+**Problem:**
+```
+emmanuel-saleem/social-auth requires laravel/framework ^9.0|^10.0|^11.0
+```
+
+**Solution:** The package supports Laravel 9, 10, and 11. Check your Laravel version:
+```bash
+php artisan --version
+```
+
+If you're on Laravel 8 or below, you need to upgrade Laravel or use an older version of Socialite.
+
 ### Issue: "Class not found" error
 
 **Solution:** Make sure to run `composer dump-autoload`
@@ -598,8 +681,11 @@ php artisan cache:clear
 ## 📚 Documentation
 
 - [API Integration Guide](./OAUTH_API_GUIDE.md) - Complete guide for SPA/API integration
+- [Passport Setup Guide](./PASSPORT_SETUP.md) - Laravel Passport integration
+- [Usage Examples](./USAGE_EXAMPLES.md) - Practical examples for React, Vue, etc.
 - [Laravel Socialite Docs](https://laravel.com/docs/socialite)
 - [Laravel Sanctum Docs](https://laravel.com/docs/sanctum)
+- [Laravel Passport Docs](https://laravel.com/docs/passport)
 
 ---
 

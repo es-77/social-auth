@@ -103,4 +103,31 @@ return [
     */
     'show_footer' => env('SOCIAL_AUTH_SHOW_FOOTER', true),
     'footer_text' => env('SOCIAL_AUTH_FOOTER_TEXT', 'Powered by Emmanuel Saleem Social Auth'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | API Authentication Driver
+    |--------------------------------------------------------------------------
+    |
+    | Choose which authentication system to use for API tokens
+    | Options: 'sanctum' or 'passport'
+    |
+    | Sanctum: Lightweight token-based authentication (default)
+    | Passport: Full OAuth2 server implementation
+    |
+    */
+    'api_auth_driver' => env('SOCIAL_AUTH_API_DRIVER', 'sanctum'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Passport Token Settings (if using Passport)
+    |--------------------------------------------------------------------------
+    |
+    | Configure Passport token settings
+    |
+    */
+    'passport' => [
+        'token_name' => 'oauth-token',
+        'scopes' => [], // Add scopes if needed
+    ],
 ];

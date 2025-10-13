@@ -83,11 +83,13 @@ class ApiOAuthController extends Controller
                 ]);
             }
 
-            // Generate access token (Laravel Sanctum)
-            $token = $user->createToken('google-oauth-token')->plainTextToken;
+            // Generate access token (Sanctum or Passport)
+            $tokenData = $this->generateAccessToken($user, 'google');
 
             return $this->successResponse([
-                'token' => $token,
+                'token' => $tokenData['token'],
+                'token_type' => $tokenData['token_type'],
+                'expires_in' => $tokenData['expires_in'] ?? null,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -184,11 +186,13 @@ class ApiOAuthController extends Controller
                 ]);
             }
 
-            // Generate access token (Laravel Sanctum)
-            $token = $user->createToken('microsoft-oauth-token')->plainTextToken;
+            // Generate access token (Sanctum or Passport)
+            $tokenData = $this->generateAccessToken($user, 'microsoft');
 
             return $this->successResponse([
-                'token' => $token,
+                'token' => $tokenData['token'],
+                'token_type' => $tokenData['token_type'],
+                'expires_in' => $tokenData['expires_in'] ?? null,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -252,6 +256,43 @@ class ApiOAuthController extends Controller
             'errors' => $errors,
             'data' => null,
         ], $code)->header('Content-Type', 'application/json');
+    }
+
+    /**
+     * Generate access token based on configured driver
+     *
+     * @param mixed $user
+     * @param string $provider
+     * @return array
+     */
+    protected function generateAccessToken($user, string $provider): array
+    {
+        $driver = config('emmanuel-saleem-social-auth.api_auth_driver', 'sanctum');
+
+        if ($driver === 'passport') {
+            // Laravel Passport
+            $tokenResult = $user->createToken(
+                config('emmanuel-saleem-social-auth.passport.token_name', 'oauth-token'),
+                config('emmanuel-saleem-social-auth.passport.scopes', [])
+            );
+
+            return [
+                'token' => $tokenResult->accessToken,
+                'token_type' => 'Bearer',
+                'expires_in' => $tokenResult->token->expires_at 
+                    ? $tokenResult->token->expires_at->diffInSeconds(now()) 
+                    : null,
+            ];
+        }
+
+        // Laravel Sanctum (default)
+        $token = $user->createToken($provider . '-oauth-token')->plainTextToken;
+
+        return [
+            'token' => $token,
+            'token_type' => 'Bearer',
+            'expires_in' => null, // Sanctum tokens don't expire by default
+        ];
     }
 }
 
