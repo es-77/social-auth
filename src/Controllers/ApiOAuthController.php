@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use EmmanuelSaleem\SocialAuth\Support\UserDataMapper;
 
 class ApiOAuthController extends Controller
 {
@@ -123,16 +124,8 @@ class ApiOAuthController extends Controller
             } else {
                 // Create new user
                 $extra = (array) ($validated['extra'] ?? []);
-                $user = $userModel::create(array_merge([
-                    'name' => $googleUser->name,
-                    'email' => $googleUser->email,
-                    'google_id' => $googleUser->id,
-                    'avatar' => $googleUser->avatar,
-                    'google_token' => $googleUser->token,
-                    'google_refresh_token' => $googleUser->refreshToken,
-                    'password' => Hash::make(Str::random(24)),
-                    'email_verified_at' => now(),
-                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $payload = UserDataMapper::prepare($googleUser, 'google');
+                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             // Generate access token (Sanctum or Passport)
@@ -238,16 +231,8 @@ class ApiOAuthController extends Controller
             } else {
                 // Create new user
                 $extra = (array) ($validated['extra'] ?? []);
-                $user = $userModel::create(array_merge([
-                    'name' => $microsoftUser->name,
-                    'email' => $microsoftUser->email,
-                    'microsoft_id' => $microsoftUser->id,
-                    'avatar' => $microsoftUser->avatar,
-                    'microsoft_token' => $microsoftUser->token,
-                    'microsoft_refresh_token' => $microsoftUser->refreshToken,
-                    'password' => Hash::make(Str::random(24)),
-                    'email_verified_at' => now(),
-                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $payload = UserDataMapper::prepare($microsoftUser, 'microsoft');
+                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             // Generate access token (Sanctum or Passport)
@@ -357,6 +342,54 @@ class ApiOAuthController extends Controller
             'token_type' => 'Bearer',
             'expires_in' => null, // Sanctum tokens don't expire by default
         ];
+    }
+
+    /**
+     * Prepare user data for creation based on configuration
+     *
+     * @param object $oauthUser
+     * @param string $provider
+     * @return array
+     */
+    protected function prepareUserData($oauthUser, string $provider): array
+    {
+        $nameField = config('emmanuel-saleem-social-auth.user_fields.name_field', 'name');
+        $additionalFields = config('emmanuel-saleem-social-auth.user_fields.additional_fields', []);
+        
+        $userData = [];
+
+        // Handle name field(s)
+        if ($nameField === 'first_last') {
+            // Split name into first_name and last_name
+            $nameParts = explode(' ', $oauthUser->name, 2);
+            $userData['first_name'] = $nameParts[0] ?? '';
+            $userData['last_name'] = $nameParts[1] ?? '';
+        } else {
+            // Use single name field
+            $userData['name'] = $oauthUser->name;
+        }
+
+        // Add common fields
+        $userData['email'] = $oauthUser->email;
+        $userData['avatar'] = $oauthUser->avatar;
+        $userData['email_verified_at'] = now();
+        $userData['password'] = Hash::make(Str::random(24));
+
+        // Add provider-specific fields
+        if ($provider === 'google') {
+            $userData['google_id'] = $oauthUser->id;
+            $userData['google_token'] = $oauthUser->token;
+            $userData['google_refresh_token'] = $oauthUser->refreshToken;
+        } elseif ($provider === 'microsoft') {
+            $userData['microsoft_id'] = $oauthUser->id;
+            $userData['microsoft_token'] = $oauthUser->token;
+            $userData['microsoft_refresh_token'] = $oauthUser->refreshToken;
+        }
+
+        // Merge additional fields from config
+        $userData = array_merge($userData, $additionalFields);
+
+        return $userData;
     }
 }
 

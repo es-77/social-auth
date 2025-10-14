@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
+use EmmanuelSaleem\SocialAuth\Support\UserDataMapper;
 
 class SocialAuthController extends Controller
 {
@@ -76,16 +77,8 @@ class SocialAuthController extends Controller
             } else {
                 // Create new user
                 $extra = (array) $request->session()->pull('social_auth.extra', []);
-                $user = $userModel::create(array_merge([
-                    'name' => $googleUser->name,
-                    'email' => $googleUser->email,
-                    'google_id' => $googleUser->id,
-                    'avatar' => $googleUser->avatar,
-                    'google_token' => $googleUser->token,
-                    'google_refresh_token' => $googleUser->refreshToken,
-                    'password' => Hash::make(Str::random(24)),
-                    'email_verified_at' => now(),
-                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $payload = UserDataMapper::prepare($googleUser, 'google');
+                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             Auth::login($user, true);
@@ -121,16 +114,8 @@ class SocialAuthController extends Controller
                     'google_refresh_token' => $googleUser->refreshToken,
                 ]);
             } else {
-                $user = $userModel::create(array_merge([
-                    'name' => $googleUser->name,
-                    'email' => $googleUser->email,
-                    'google_id' => $googleUser->id,
-                    'avatar' => $googleUser->avatar,
-                    'google_token' => $googleUser->token,
-                    'google_refresh_token' => $googleUser->refreshToken,
-                    'password' => Hash::make(Str::random(24)),
-                    'email_verified_at' => now(),
-                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', [])));
+                $payload = UserDataMapper::prepare($googleUser, 'google');
+                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', [])));
             }
 
             $token = $user->createToken('google-auth')->plainTextToken;
@@ -234,16 +219,8 @@ class SocialAuthController extends Controller
             } else {
                 // Create new user
                 $extra = (array) request()->session()->pull('social_auth.extra', []);
-                $user = $userModel::create(array_merge([
-                    'name' => $microsoftUser->name,
-                    'email' => $microsoftUser->email,
-                    'microsoft_id' => $microsoftUser->id,
-                    'avatar' => $microsoftUser->avatar,
-                    'microsoft_token' => $microsoftUser->token,
-                    'microsoft_refresh_token' => $microsoftUser->refreshToken,
-                    'password' => Hash::make(Str::random(24)),
-                    'email_verified_at' => now(),
-                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $payload = UserDataMapper::prepare($microsoftUser, 'microsoft');
+                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             Auth::login($user, true);
