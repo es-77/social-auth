@@ -185,35 +185,57 @@ return [
     | User Fields Mapping
     |--------------------------------------------------------------------------
     |
-    | Map OAuth user data to your database fields
-    | This allows the package to work with different database schemas
-    |
-    | Options for name_field:
-    | - 'name' (default) - Store full name in single 'name' column
-    | - 'first_name' - Store full name in 'first_name' column only
-    | - 'first_last' - Split into 'first_name' and 'last_name' columns
+    | Define how OAuth data maps to your user table fields
+    | This allows complete flexibility for different database schemas
     |
     */
     'user_fields' => [
-        // How to handle the user's name from OAuth
-        // 'name' = single name column, 'first_name' = first_name column only, 'first_last' = separate first_name/last_name columns
-        'name_field' => env('SOCIAL_AUTH_NAME_FIELD', 'name'), // 'name', 'first_name', or 'first_last'
-        
-        // Fields that should be filled when creating a user
-        // Add any additional required fields for your users table
-        'additional_fields' => [
-            // Example:
-            // 'role' => 'user',
-            // 'status' => 'active',
-            // 'is_active' => true,
+        // Field mapping from OAuth providers to your user table columns
+        'field_mapping' => [
+            // Google OAuth fields -> Your user table columns
+            'google' => [
+                'name' => 'first_name',           // Google name -> first_name column
+                'email' => 'email',               // Google email -> email column  
+                'avatar' => 'avatar',             // Google avatar -> avatar column
+                'id' => 'google_id',              // Google ID -> google_id column
+                'token' => 'google_token',        // Google token -> google_token column
+                'refresh_token' => 'google_refresh_token', // Google refresh -> google_refresh_token column
+            ],
+            
+            // Microsoft OAuth fields -> Your user table columns  
+            'microsoft' => [
+                'name' => 'first_name',           // Microsoft name -> first_name column
+                'email' => 'email',               // Microsoft email -> email column
+                'avatar' => 'avatar',             // Microsoft avatar -> avatar column  
+                'id' => 'microsoft_id',          // Microsoft ID -> microsoft_id column
+                'token' => 'microsoft_token',     // Microsoft token -> microsoft_token column
+                'refresh_token' => 'microsoft_refresh_token', // Microsoft refresh -> microsoft_refresh_token column
+            ],
         ],
 
-        // Optional: Map standard field names to your custom column names
-        'custom_fields' => [
-            // Example:
-            // 'first_name' => 'given_name',
-            // 'last_name' => 'surname',
-            // 'email' => 'user_email',
+        // Default values for required fields that OAuth doesn't provide
+        'defaults' => [
+            'last_name' => '',                    // Default for last_name (NOT NULL column)
+            'password' => 'auto_generated',       // Will be auto-generated
+            'email_verified_at' => 'now',         // Will be set to current timestamp
+            'role' => env('SOCIAL_AUTH_DEFAULT_ROLE', 'user'),
+            'status' => 'active',
+            'is_active' => true,
+        ],
+
+        // Special handling for name field (if you want to split Google name)
+        'name_handling' => [
+            'mode' => env('SOCIAL_AUTH_NAME_MODE', 'single'), // 'single', 'split', 'custom'
+            'split_fields' => [
+                'first_name' => 'first_name',    // Where to put first part
+                'last_name' => 'last_name',      // Where to put last part  
+            ],
+        ],
+
+        // Custom field transformations
+        'transformations' => [
+            // Example: Convert email domain to a field
+            // 'email_domain' => function($email) { return substr(strrchr($email, "@"), 1); },
         ],
     ],
 ];

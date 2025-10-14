@@ -16,74 +16,104 @@ class UserDataMapper
      */
     public static function prepare(object $oauthUser, string $provider): array
     {
-        $nameFieldMode = (string) config('emmanuel-saleem-social-auth.user_fields.name_field', 'name');
-        $additionalFields = (array) config('emmanuel-saleem-social-auth.user_fields.additional_fields', []);
-        $customFieldMap = (array) (config('emmanuel-saleem-social-auth.user_fields.custom_fields') ?? []);
+        $fieldMapping = config("emmanuel-saleem-social-auth.user_fields.field_mapping.{$provider}", []);
+        $defaults = config('emmanuel-saleem-social-auth.user_fields.defaults', []);
+        $nameHandling = config('emmanuel-saleem-social-auth.user_fields.name_handling', []);
+        $transformations = config('emmanuel-saleem-social-auth.user_fields.transformations', []);
 
         $data = [];
 
-        // Name handling - support multiple modes
-        $fullName = (string) ($oauthUser->name ?? '');
-        if ($nameFieldMode === 'first_last') {
-            // Split into first_name and last_name
-            $parts = preg_split('/\s+/', trim($fullName), 2) ?: [];
-            $data['first_name'] = $parts[0] ?? '';
-            $data['last_name'] = $parts[1] ?? '';
-        } elseif ($nameFieldMode === 'first_name') {
-            // Store full name in first_name field only
-            $data['first_name'] = $fullName;
-        } else {
-            // Default: store in name field
-            $data['name'] = $fullName;
+        // Map OAuth fields to user table fields
+        foreach ($fieldMapping as $oauthField => $userField) {
+            $value = self::getOAuthValue($oauthUser, $oauthField);
+            
+            // Handle special cases
+            if ($oauthField === 'name') {
+                $value = self::handleNameField($value, $nameHandling, $data);
+            }
+            
+            if ($value !== null) {
+                $data[$userField] = $value;
+            }
         }
 
-        // Common fields
-        $data['email'] = $oauthUser->email ?? null;
-        $data['avatar'] = $oauthUser->avatar ?? null;
-        $data['email_verified_at'] = now();
-        $data['password'] = Hash::make(Str::random(24));
-
-        // Provider-specific fields
-        if ($provider === 'google') {
-            $data['google_id'] = $oauthUser->id ?? null;
-            $data['google_token'] = $oauthUser->token ?? null;
-            $data['google_refresh_token'] = $oauthUser->refreshToken ?? null;
-        } elseif ($provider === 'microsoft') {
-            $data['microsoft_id'] = $oauthUser->id ?? null;
-            $data['microsoft_token'] = $oauthUser->token ?? null;
-            $data['microsoft_refresh_token'] = $oauthUser->refreshToken ?? null;
+        // Apply defaults for any missing required fields
+        foreach ($defaults as $field => $defaultValue) {
+            if (!array_key_exists($field, $data)) {
+                $data[$field] = self::processDefaultValue($defaultValue);
+            }
         }
 
-        // Merge any additional fixed fields
-        $data = array_merge($data, $additionalFields);
-
-        // Apply custom field name mapping (rename keys)
-        if (!empty($customFieldMap)) {
-            $data = self::remapKeys($data, $customFieldMap);
+        // Apply custom transformations
+        foreach ($transformations as $field => $transformation) {
+            if (is_callable($transformation) && isset($data[$field])) {
+                $data[$field] = $transformation($data[$field]);
+            }
         }
 
         return $data;
     }
 
     /**
-     * Rename keys in the array based on a mapping [from => to].
-     *
-     * @param array $data
-     * @param array $map
-     * @return array
+     * Get value from OAuth user object
      */
-    protected static function remapKeys(array $data, array $map): array
+    protected static function getOAuthValue($oauthUser, string $field)
     {
-        foreach ($map as $from => $to) {
-            if ($from === $to) {
-                continue;
-            }
-            if (array_key_exists($from, $data)) {
-                $data[$to] = $data[$from];
-                unset($data[$from]);
-            }
+        switch ($field) {
+            case 'name':
+                return $oauthUser->name ?? null;
+            case 'email':
+                return $oauthUser->email ?? null;
+            case 'avatar':
+                return $oauthUser->avatar ?? null;
+            case 'id':
+                return $oauthUser->id ?? null;
+            case 'token':
+                return $oauthUser->token ?? null;
+            case 'refresh_token':
+                return $oauthUser->refreshToken ?? null;
+            default:
+                return $oauthUser->{$field} ?? null;
         }
-        return $data;
+    }
+
+    /**
+     * Handle name field based on configuration
+     */
+    protected static function handleNameField($name, array $nameHandling, array &$data): string
+    {
+        $mode = $nameHandling['mode'] ?? 'single';
+        
+        if ($mode === 'split') {
+            $splitFields = $nameHandling['split_fields'] ?? [];
+            $parts = preg_split('/\s+/', trim($name), 2) ?: [];
+            
+            $firstField = $splitFields['first_name'] ?? 'first_name';
+            $lastField = $splitFields['last_name'] ?? 'last_name';
+            
+            $data[$firstField] = $parts[0] ?? '';
+            $data[$lastField] = $parts[1] ?? '';
+            
+            return $parts[0] ?? ''; // Return first part as the main name
+        }
+        
+        return $name;
+    }
+
+    /**
+     * Process default values (handle special cases)
+     */
+    protected static function processDefaultValue($value)
+    {
+        if ($value === 'auto_generated') {
+            return Hash::make(Str::random(24));
+        }
+        
+        if ($value === 'now') {
+            return now();
+        }
+        
+        return $value;
     }
 }
 
