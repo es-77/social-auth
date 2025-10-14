@@ -12,6 +12,37 @@ use Laravel\Socialite\Facades\Socialite;
 class ApiOAuthController extends Controller
 {
     /**
+     * Build Google Socialite driver with package configuration
+     */
+    protected function buildGoogleDriver()
+    {
+        \config([
+            'services.google' => [
+                'client_id' => \config('emmanuel-saleem-social-auth.google.client_id'),
+                'client_secret' => \config('emmanuel-saleem-social-auth.google.client_secret'),
+                'redirect' => \config('emmanuel-saleem-social-auth.google.redirect'),
+            ],
+        ]);
+
+        return Socialite::driver('google');
+    }
+
+    /**
+     * Build Microsoft Socialite driver with package configuration
+     */
+    protected function buildMicrosoftDriver()
+    {
+        \config([
+            'services.microsoft' => [
+                'client_id' => \config('emmanuel-saleem-social-auth.microsoft.client_id'),
+                'client_secret' => \config('emmanuel-saleem-social-auth.microsoft.client_secret'),
+                'redirect' => \config('emmanuel-saleem-social-auth.microsoft.redirect'),
+            ],
+        ]);
+
+        return Socialite::driver('microsoft');
+    }
+    /**
      * Get Google OAuth authorization URL
      *
      * @return JsonResponse
@@ -19,7 +50,7 @@ class ApiOAuthController extends Controller
     public function getGoogleAuthUrl(): JsonResponse
     {
         try {
-            $url = Socialite::driver('google')
+            $url = $this->buildGoogleDriver()
                 ->stateless()
                 ->redirect()
                 ->getTargetUrl();
@@ -51,12 +82,12 @@ class ApiOAuthController extends Controller
             ]);
 
             // Exchange code for user info
-            $googleUser = Socialite::driver('google')
+            $googleUser = $this->buildGoogleDriver()
                 ->stateless()
                 ->user();
 
             // Get configured user model
-            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $userModel = \config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
 
             // Find or create user
             $user = $userModel::where('google_id', $googleUser->id)
@@ -125,7 +156,7 @@ class ApiOAuthController extends Controller
     public function getMicrosoftAuthUrl(): JsonResponse
     {
         try {
-            $url = Socialite::driver('microsoft')
+            $url = $this->buildMicrosoftDriver()
                 ->stateless()
                 ->redirect()
                 ->getTargetUrl();
@@ -157,12 +188,12 @@ class ApiOAuthController extends Controller
             ]);
 
             // Exchange code for user info
-            $microsoftUser = Socialite::driver('microsoft')
+            $microsoftUser = $this->buildMicrosoftDriver()
                 ->stateless()
                 ->user();
 
             // Get configured user model
-            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $userModel = \config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
 
             // Find or create user
             $user = $userModel::where('microsoft_id', $microsoftUser->id)

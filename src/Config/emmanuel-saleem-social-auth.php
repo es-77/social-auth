@@ -140,5 +140,5 @@ return [
     | This allows the package to work with different User model locations
     |
     */
-    'user_model' => env('AUTH_USER_MODEL', 'App\Models\User::class'),
+    'user_model' => App\Models\User::class,
 ];

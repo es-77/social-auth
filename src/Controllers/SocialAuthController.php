@@ -16,7 +16,23 @@ class SocialAuthController extends Controller
      */
     public function redirectToGoogle()
     {
-        return Socialite::driver('google')->stateless()->redirect();
+        return $this->buildGoogleDriver()->stateless()->redirect();
+    }
+
+    /**
+     * Build Google Socialite driver with package configuration
+     */
+    protected function buildGoogleDriver()
+    {
+        \config([
+            'services.google' => [
+                'client_id' => \config('emmanuel-saleem-social-auth.google.client_id'),
+                'client_secret' => \config('emmanuel-saleem-social-auth.google.client_secret'),
+                'redirect' => \config('emmanuel-saleem-social-auth.google.redirect'),
+            ],
+        ]);
+
+        return Socialite::driver('google');
     }
 
     /**
@@ -26,9 +42,9 @@ class SocialAuthController extends Controller
     {
         try {
             // Use stateless for web to avoid session state issues
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            $googleUser = $this->buildGoogleDriver()->stateless()->user();
             
-            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $userModel = \config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
             $user = $userModel::where('google_id', $googleUser->id)
                        ->orWhere('email', $googleUser->email)
                        ->first();
@@ -57,12 +73,12 @@ class SocialAuthController extends Controller
 
             Auth::login($user, true);
 
-            return redirect()->intended(config('emmanuel-saleem-social-auth.redirect_after_login'));
+            return \redirect()->intended(\config('emmanuel-saleem-social-auth.redirect_after_login'));
             
         } catch (\Exception $e) {
             \Log::error('Google OAuth Error: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
-            return redirect()->route('emmanuel-saleem.social-auth.login')
+            return \redirect()->route('emmanuel-saleem.social-auth.login')
                 ->with('error', 'Failed to login with Google: ' . $e->getMessage());
         }
     }
@@ -73,9 +89,9 @@ class SocialAuthController extends Controller
     public function handleGoogleCallbackApi(Request $request)
     {
         try {
-            $googleUser = Socialite::driver('google')->stateless()->user();
+            $googleUser = $this->buildGoogleDriver()->stateless()->user();
             
-            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $userModel = \config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
             $user = $userModel::where('google_id', $googleUser->id)
                        ->orWhere('email', $googleUser->email)
                        ->first();
@@ -141,7 +157,23 @@ class SocialAuthController extends Controller
      */
     public function redirectToMicrosoft()
     {
-        return Socialite::driver('microsoft')->stateless()->redirect();
+        return $this->buildMicrosoftDriver()->stateless()->redirect();
+    }
+
+    /**
+     * Build Microsoft Socialite driver with package configuration
+     */
+    protected function buildMicrosoftDriver()
+    {
+        \config([
+            'services.microsoft' => [
+                'client_id' => \config('emmanuel-saleem-social-auth.microsoft.client_id'),
+                'client_secret' => \config('emmanuel-saleem-social-auth.microsoft.client_secret'),
+                'redirect' => \config('emmanuel-saleem-social-auth.microsoft.redirect'),
+            ],
+        ]);
+
+        return Socialite::driver('microsoft');
     }
 
     /**
@@ -151,9 +183,9 @@ class SocialAuthController extends Controller
     {
         try {
             // Use stateless for web to avoid session state issues
-            $microsoftUser = Socialite::driver('microsoft')->stateless()->user();
+            $microsoftUser = $this->buildMicrosoftDriver()->stateless()->user();
             
-            $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $userModel = \config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
             $user = $userModel::where('microsoft_id', $microsoftUser->id)
                        ->orWhere('email', $microsoftUser->email)
                        ->first();
@@ -182,12 +214,12 @@ class SocialAuthController extends Controller
 
             Auth::login($user, true);
 
-            return redirect()->intended(config('emmanuel-saleem-social-auth.redirect_after_login'));
+            return \redirect()->intended(\config('emmanuel-saleem-social-auth.redirect_after_login'));
             
         } catch (\Exception $e) {
             \Log::error('Microsoft OAuth Error: ' . $e->getMessage());
             \Log::error('Stack trace: ' . $e->getTraceAsString());
-            return redirect()->route('emmanuel-saleem.social-auth.login')
+            return \redirect()->route('emmanuel-saleem.social-auth.login')
                 ->with('error', 'Failed to login with Microsoft: ' . $e->getMessage());
         }
     }
