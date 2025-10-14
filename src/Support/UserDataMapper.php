@@ -22,13 +22,18 @@ class UserDataMapper
 
         $data = [];
 
-        // Name handling
+        // Name handling - support multiple modes
         $fullName = (string) ($oauthUser->name ?? '');
         if ($nameFieldMode === 'first_last') {
+            // Split into first_name and last_name
             $parts = preg_split('/\s+/', trim($fullName), 2) ?: [];
             $data['first_name'] = $parts[0] ?? '';
             $data['last_name'] = $parts[1] ?? '';
+        } elseif ($nameFieldMode === 'first_name') {
+            // Store full name in first_name field only
+            $data['first_name'] = $fullName;
         } else {
+            // Default: store in name field
             $data['name'] = $fullName;
         }
 

@@ -190,13 +190,14 @@ return [
     |
     | Options for name_field:
     | - 'name' (default) - Store full name in single 'name' column
+    | - 'first_name' - Store full name in 'first_name' column only
     | - 'first_last' - Split into 'first_name' and 'last_name' columns
     |
     */
     'user_fields' => [
         // How to handle the user's name from OAuth
-        // 'name' = single name column, 'first_last' = separate first_name/last_name columns
-        'name_field' => env('SOCIAL_AUTH_NAME_FIELD', 'name'), // or 'first_last'
+        // 'name' = single name column, 'first_name' = first_name column only, 'first_last' = separate first_name/last_name columns
+        'name_field' => env('SOCIAL_AUTH_NAME_FIELD', 'name'), // 'name', 'first_name', or 'first_last'
         
         // Fields that should be filled when creating a user
         // Add any additional required fields for your users table
@@ -205,6 +206,14 @@ return [
             // 'role' => 'user',
             // 'status' => 'active',
             // 'is_active' => true,
+        ],
+
+        // Optional: Map standard field names to your custom column names
+        'custom_fields' => [
+            // Example:
+            // 'first_name' => 'given_name',
+            // 'last_name' => 'surname',
+            // 'email' => 'user_email',
         ],
     ],
 ];
