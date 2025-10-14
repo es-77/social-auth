@@ -54,7 +54,7 @@ class SocialAuthController extends Controller
     /**
      * Handle Google OAuth callback
      */
-    public function handleGoogleCallback()
+    public function handleGoogleCallback(Request $request)
     {
         try {
             // Use stateless for web to avoid session state issues
