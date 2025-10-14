@@ -133,6 +133,44 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Default User Attributes
+    |--------------------------------------------------------------------------
+    |
+    | Attributes to set when creating a user from OAuth, useful for required
+    | columns like role. Override via env or publish this config.
+    |
+    */
+    'user_defaults' => [
+        'role' => env('SOCIAL_AUTH_DEFAULT_ROLE', 'user'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Required Fields (Rendered on Login Page)
+    |--------------------------------------------------------------------------
+    |
+    | Define extra fields to collect before redirecting to OAuth. These values
+    | are stored in the session and merged when creating the user.
+    |
+    | Supported types in the default Blade: text, select.
+    |
+    */
+    'required_fields' => [
+        [
+            'name' => 'role',
+            'label' => 'Role',
+            'type' => 'select',
+            'required' => true,
+            'options' => [
+                'user' => 'User',
+                'admin' => 'Admin',
+            ],
+            'default' => env('SOCIAL_AUTH_DEFAULT_ROLE', 'user'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | User Model
     |--------------------------------------------------------------------------
     |

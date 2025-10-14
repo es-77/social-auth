@@ -9,6 +9,8 @@ Route::group([
 ], function () {
     
     // Google OAuth API routes
+    Route::get('/auth/required-fields', [ApiOAuthController::class, 'getRequiredFields'])
+        ->name('api.oauth.required_fields');
     Route::get('/auth/google/url', [ApiOAuthController::class, 'getGoogleAuthUrl'])
         ->name('api.oauth.google.url');
     

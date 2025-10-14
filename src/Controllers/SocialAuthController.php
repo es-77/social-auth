@@ -20,6 +20,22 @@ class SocialAuthController extends Controller
     }
 
     /**
+     * Validate and store required fields for Google then redirect
+     */
+    public function prepareGoogleLogin(Request $request)
+    {
+        $requiredFields = (array) \config('emmanuel-saleem-social-auth.required_fields', []);
+        $rules = [];
+        foreach ($requiredFields as $field) {
+            $name = 'extra.' . ($field['name'] ?? '');
+            $rules[$name] = !empty($field['required']) ? 'required' : 'nullable';
+        }
+        $validated = $request->validate($rules);
+        $request->session()->put('social_auth.extra', $validated['extra'] ?? []);
+        return $this->redirectToGoogle();
+    }
+
+    /**
      * Build Google Socialite driver with package configuration
      */
     protected function buildGoogleDriver()
@@ -59,7 +75,8 @@ class SocialAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $user = $userModel::create([
+                $extra = (array) $request->session()->pull('social_auth.extra', []);
+                $user = $userModel::create(array_merge([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
                     'google_id' => $googleUser->id,
@@ -68,7 +85,7 @@ class SocialAuthController extends Controller
                     'google_refresh_token' => $googleUser->refreshToken,
                     'password' => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
-                ]);
+                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             Auth::login($user, true);
@@ -104,7 +121,7 @@ class SocialAuthController extends Controller
                     'google_refresh_token' => $googleUser->refreshToken,
                 ]);
             } else {
-                $user = $userModel::create([
+                $user = $userModel::create(array_merge([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
                     'google_id' => $googleUser->id,
@@ -113,7 +130,7 @@ class SocialAuthController extends Controller
                     'google_refresh_token' => $googleUser->refreshToken,
                     'password' => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
-                ]);
+                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', [])));
             }
 
             $token = $user->createToken('google-auth')->plainTextToken;
@@ -161,6 +178,22 @@ class SocialAuthController extends Controller
     }
 
     /**
+     * Validate and store required fields for Microsoft then redirect
+     */
+    public function prepareMicrosoftLogin(Request $request)
+    {
+        $requiredFields = (array) \config('emmanuel-saleem-social-auth.required_fields', []);
+        $rules = [];
+        foreach ($requiredFields as $field) {
+            $name = 'extra.' . ($field['name'] ?? '');
+            $rules[$name] = !empty($field['required']) ? 'required' : 'nullable';
+        }
+        $validated = $request->validate($rules);
+        $request->session()->put('social_auth.extra', $validated['extra'] ?? []);
+        return $this->redirectToMicrosoft();
+    }
+
+    /**
      * Build Microsoft Socialite driver with package configuration
      */
     protected function buildMicrosoftDriver()
@@ -200,7 +233,8 @@ class SocialAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $user = $userModel::create([
+                $extra = (array) request()->session()->pull('social_auth.extra', []);
+                $user = $userModel::create(array_merge([
                     'name' => $microsoftUser->name,
                     'email' => $microsoftUser->email,
                     'microsoft_id' => $microsoftUser->id,
@@ -209,7 +243,7 @@ class SocialAuthController extends Controller
                     'microsoft_refresh_token' => $microsoftUser->refreshToken,
                     'password' => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
-                ]);
+                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             Auth::login($user, true);

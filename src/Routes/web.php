@@ -11,6 +11,11 @@ Route::group([
     // Login page
     Route::get('/social-auth/login', [SocialAuthController::class, 'showLoginPage'])
         ->name('emmanuel-saleem.social-auth.login');
+    // Capture required fields then redirect
+    Route::post('/social-auth/login/google', [SocialAuthController::class, 'prepareGoogleLogin'])
+        ->name('emmanuel-saleem.social-auth.login.google');
+    Route::post('/social-auth/login/microsoft', [SocialAuthController::class, 'prepareMicrosoftLogin'])
+        ->name('emmanuel-saleem.social-auth.login.microsoft');
     
     // Google OAuth routes
     Route::get('/social-auth/google', [SocialAuthController::class, 'redirectToGoogle'])

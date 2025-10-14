@@ -12,6 +12,16 @@ use Laravel\Socialite\Facades\Socialite;
 class ApiOAuthController extends Controller
 {
     /**
+     * Get required fields configuration for clients
+     */
+    public function getRequiredFields(): JsonResponse
+    {
+        return $this->successResponse([
+            'required_fields' => (array) \config('emmanuel-saleem-social-auth.required_fields', []),
+            'defaults' => (array) \config('emmanuel-saleem-social-auth.user_defaults', []),
+        ], 'Required fields fetched');
+    }
+    /**
      * Build Google Socialite driver with package configuration
      */
     protected function buildGoogleDriver()
@@ -77,9 +87,17 @@ class ApiOAuthController extends Controller
     public function handleGoogleCallback(Request $request): JsonResponse
     {
         try {
-            $request->validate([
-                'code' => 'required|string'
-            ]);
+            // Validate incoming code and optional extra fields
+            $requiredFields = (array) \config('emmanuel-saleem-social-auth.required_fields', []);
+            $rules = [
+                'code' => 'required|string',
+                'extra' => 'nullable|array',
+            ];
+            foreach ($requiredFields as $field) {
+                $name = 'extra.' . ($field['name'] ?? '');
+                $rules[$name] = !empty($field['required']) ? 'required' : 'nullable';
+            }
+            $validated = $request->validate($rules);
 
             // Exchange code for user info
             $googleUser = $this->buildGoogleDriver()
@@ -104,7 +122,8 @@ class ApiOAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $user = $userModel::create([
+                $extra = (array) ($validated['extra'] ?? []);
+                $user = $userModel::create(array_merge([
                     'name' => $googleUser->name,
                     'email' => $googleUser->email,
                     'google_id' => $googleUser->id,
@@ -113,7 +132,7 @@ class ApiOAuthController extends Controller
                     'google_refresh_token' => $googleUser->refreshToken,
                     'password' => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
-                ]);
+                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             // Generate access token (Sanctum or Passport)
@@ -183,9 +202,17 @@ class ApiOAuthController extends Controller
     public function handleMicrosoftCallback(Request $request): JsonResponse
     {
         try {
-            $request->validate([
-                'code' => 'required|string'
-            ]);
+            // Validate incoming code and optional extra fields
+            $requiredFields = (array) \config('emmanuel-saleem-social-auth.required_fields', []);
+            $rules = [
+                'code' => 'required|string',
+                'extra' => 'nullable|array',
+            ];
+            foreach ($requiredFields as $field) {
+                $name = 'extra.' . ($field['name'] ?? '');
+                $rules[$name] = !empty($field['required']) ? 'required' : 'nullable';
+            }
+            $validated = $request->validate($rules);
 
             // Exchange code for user info
             $microsoftUser = $this->buildMicrosoftDriver()
@@ -210,7 +237,8 @@ class ApiOAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $user = $userModel::create([
+                $extra = (array) ($validated['extra'] ?? []);
+                $user = $userModel::create(array_merge([
                     'name' => $microsoftUser->name,
                     'email' => $microsoftUser->email,
                     'microsoft_id' => $microsoftUser->id,
@@ -219,7 +247,7 @@ class ApiOAuthController extends Controller
                     'microsoft_refresh_token' => $microsoftUser->refreshToken,
                     'password' => Hash::make(Str::random(24)),
                     'email_verified_at' => now(),
-                ]);
+                ], (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
             }
 
             // Generate access token (Sanctum or Passport)
