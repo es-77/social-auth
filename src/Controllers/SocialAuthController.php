@@ -16,7 +16,7 @@ class SocialAuthController extends Controller
      */
     public function redirectToGoogle()
     {
-        return Socialite::driver('google')->redirect();
+        return Socialite::driver('google')->stateless()->redirect();
     }
 
     /**
@@ -25,7 +25,8 @@ class SocialAuthController extends Controller
     public function handleGoogleCallback()
     {
         try {
-            $googleUser = Socialite::driver('google')->user();
+            // Use stateless for web to avoid session state issues
+            $googleUser = Socialite::driver('google')->stateless()->user();
             
             $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
             $user = $userModel::where('google_id', $googleUser->id)
@@ -140,7 +141,7 @@ class SocialAuthController extends Controller
      */
     public function redirectToMicrosoft()
     {
-        return Socialite::driver('microsoft')->redirect();
+        return Socialite::driver('microsoft')->stateless()->redirect();
     }
 
     /**
@@ -149,7 +150,8 @@ class SocialAuthController extends Controller
     public function handleMicrosoftCallback()
     {
         try {
-            $microsoftUser = Socialite::driver('microsoft')->user();
+            // Use stateless for web to avoid session state issues
+            $microsoftUser = Socialite::driver('microsoft')->stateless()->user();
             
             $userModel = config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
             $user = $userModel::where('microsoft_id', $microsoftUser->id)
