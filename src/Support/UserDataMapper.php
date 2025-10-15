@@ -23,9 +23,22 @@ class UserDataMapper
 
         $data = [];
 
+        // Pre-compute name parts for convenience
+        $fullName = (string) ($oauthUser->name ?? '');
+        $parts = preg_split('/\s+/', trim($fullName), 2) ?: [];
+        $firstPart = $parts[0] ?? '';
+        $lastPart = $parts[1] ?? '';
+
         // Map OAuth fields to user table fields
         foreach ($fieldMapping as $oauthField => $userField) {
-            $value = self::getOAuthValue($oauthUser, $oauthField);
+            // Special handling for explicit first/last name mapping keys
+            if ($oauthField === 'first_name') {
+                $value = $firstPart;
+            } elseif ($oauthField === 'last_name') {
+                $value = $lastPart;
+            } else {
+                $value = self::getOAuthValue($oauthUser, $oauthField);
+            }
             
             // Handle special cases
             if ($oauthField === 'name') {
