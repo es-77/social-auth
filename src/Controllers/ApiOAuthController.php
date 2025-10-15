@@ -27,11 +27,14 @@ class ApiOAuthController extends Controller
      */
     protected function buildGoogleDriver()
     {
+        $redirect = \config('emmanuel-saleem-social-auth.google.api_redirect')
+            ?: \config('emmanuel-saleem-social-auth.google.redirect');
+
         \config([
             'services.google' => [
                 'client_id' => \config('emmanuel-saleem-social-auth.google.client_id'),
                 'client_secret' => \config('emmanuel-saleem-social-auth.google.client_secret'),
-                'redirect' => \config('emmanuel-saleem-social-auth.google.redirect'),
+                'redirect' => $redirect,
             ],
         ]);
 
@@ -43,11 +46,14 @@ class ApiOAuthController extends Controller
      */
     protected function buildMicrosoftDriver()
     {
+        $redirect = \config('emmanuel-saleem-social-auth.microsoft.api_redirect')
+            ?: \config('emmanuel-saleem-social-auth.microsoft.redirect');
+
         \config([
             'services.microsoft' => [
                 'client_id' => \config('emmanuel-saleem-social-auth.microsoft.client_id'),
                 'client_secret' => \config('emmanuel-saleem-social-auth.microsoft.client_secret'),
-                'redirect' => \config('emmanuel-saleem-social-auth.microsoft.redirect'),
+                'redirect' => $redirect,
             ],
         ]);
 

@@ -61,6 +61,9 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('GOOGLE_REDIRECT_URI'),
+        // API-first flow: set a separate redirect URI that points to your frontend SPA
+        // Example: https://frontend.example.com/oauth/google/callback
+        'api_redirect' => env('GOOGLE_API_REDIRECT_URI'),
     ],
 
     /*
@@ -78,6 +81,9 @@ return [
         'client_id' => env('MICROSOFT_CLIENT_ID'),
         'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
         'redirect' => env('MICROSOFT_REDIRECT_URI'),
+        // API-first flow: set a separate redirect URI that points to your frontend SPA
+        // Example: https://frontend.example.com/oauth/microsoft/callback
+        'api_redirect' => env('MICROSOFT_API_REDIRECT_URI'),
     ],
 
     /*
