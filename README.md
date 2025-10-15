@@ -3,7 +3,7 @@
 A comprehensive Laravel package for OAuth social authentication with Google and Microsoft, supporting both traditional web applications and modern SPA/API-based frontends.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Laravel](https://img.shields.io/badge/Laravel-9%20%7C%2010%20%7C%2011-red.svg)](https://laravel.com)
+[![Laravel](https://img.shields.io/badge/Laravel-8%20%7C%209%20%7C%2010%20%7C%2011-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-blue.svg)](https://php.net)
 
 ## 📚 Table of Contents
@@ -40,8 +40,8 @@ A comprehensive Laravel package for OAuth social authentication with Google and 
 ## 📋 Requirements
 
 - PHP 8.0 or higher
-- Laravel 9.x, 10.x or 11.x
-- Laravel Socialite 5.x
+- Laravel 8.x, 9.x, 10.x or 11.x
+- Laravel Socialite 4.x (for Laravel 8) or 5.x (for Laravel 9+)
 - Laravel Sanctum (for API authentication - default) **OR** Laravel Passport (optional)
 
 ---
@@ -995,6 +995,205 @@ fetch('/api/user/profile', {
 ```
 
 For complete React/Vue examples, see [USAGE_EXAMPLES.md](./USAGE_EXAMPLES.md)
+
+#### Next.js example pages
+
+Add these pages to your Next.js app for a quick end-to-end test with this package's API endpoints.
+
+`app/(public)/auth/google/callback/page.tsx`
+
+```tsx
+'use client';
+
+import React from 'react';
+
+export default function GoogleCallbackPage() {
+    const [loading, setLoading] = React.useState(true);
+    const [error, setError] = React.useState<string | null>(null);
+    const [token, setToken] = React.useState<string | null>(null);
+    const [user, setUser] = React.useState<Record<string, unknown> | null>(null);
+
+    React.useEffect(() => {
+        const run = async () => {
+            const searchParams = new URLSearchParams(window.location.search);
+            const code = searchParams.get('code');
+            if (!code) {
+                setError('Missing OAuth code in URL.');
+                setLoading(false);
+                return;
+            }
+            try {
+                const body = new URLSearchParams();
+                body.set('code', code);
+                body.set('extra[role]', 'admin');
+                const res = await fetch('http://cm.lndo.site/emmanuel-saleem/auth/google/callback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body.toString(),
+                    cache: 'no-store',
+                });
+                const result = await res.json();
+                if (result?.status && result?.data?.token) {
+                    const receivedToken = result.data.token as string;
+                    const receivedUser = result.data.user as Record<string, unknown> | undefined;
+                    try {
+                        localStorage.setItem('token', receivedToken);
+                        if (receivedUser) {
+                            localStorage.setItem('user', JSON.stringify(receivedUser));
+                        }
+                    } catch (_) {
+                        // ignore storage errors
+                    }
+                    setToken(receivedToken);
+                    setUser(receivedUser ?? null);
+                } else {
+                    setError('Authentication failed.');
+                }
+            } catch (e) {
+                setError('Unexpected error during authentication.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        run();
+    }, []);
+
+    const copyToken = async () => {
+        if (!token) return;
+        try {
+            await navigator.clipboard.writeText(token);
+            // eslint-disable-next-line no-alert
+            alert('Token copied to clipboard');
+        } catch {
+            // eslint-disable-next-line no-alert
+            alert('Failed to copy token');
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: 800, margin: '40px auto', padding: 24 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Google OAuth Callback</h1>
+            {loading && <p>Processing callback...</p>}
+            {!loading && error && (
+                <div style={{ color: '#b00020' }}>
+                    <p>{error}</p>
+                </div>
+            )}
+            {!loading && !error && (
+                <div>
+                    <p style={{ marginBottom: 8 }}>Authentication successful. Token is shown below.</p>
+                    <div
+                        style={{
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 8,
+                            padding: 12,
+                            background: '#f9fafb',
+                            wordBreak: 'break-all',
+                        }}
+                    >
+                        <code>{token}</code>
+                    </div>
+                    <button
+                        onClick={copyToken}
+                        style={{
+                            padding: '8px 14px',
+                            borderRadius: 8,
+                            background: '#111827',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontWeight: 600,
+                            marginTop: 12,
+                        }}
+                    >
+                        Copy Token
+                    </button>
+                    {user && (
+                        <div style={{ marginTop: 20 }}>
+                            <h2 style={{ fontSize: 18, fontWeight: 600, marginBottom: 8 }}>User</h2>
+                            <pre
+                                style={{
+                                    border: '1px solid #e5e7eb',
+                                    borderRadius: 8,
+                                    padding: 12,
+                                    background: '#f3f4f6',
+                                    whiteSpace: 'pre-wrap',
+                                }}
+                            >
+                                {JSON.stringify(user, null, 2)}
+                            </pre>
+                        </div>
+                    )}
+                    <div style={{ marginTop: 24 }}>
+                        <a href="/oauth-test" style={{ textDecoration: 'underline' }}>Back to test page</a>
+                        {' '}
+                        |
+                        {' '}
+                        <a href="/dashboard" style={{ textDecoration: 'underline' }}>Go to dashboard</a>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+```
+
+`app/(public)/oauth-test/page.tsx`
+
+```tsx
+'use client';
+
+import React from 'react';
+
+export default function OAuthTestPage() {
+    const handleGoogleLogin = async () => {
+        try {
+            const response = await fetch('http://cm.lndo.site/emmanuel-saleem/auth/google/url', { cache: 'no-store' });
+            const result = await response.json();
+            if (result?.status && result?.data?.url) {
+                window.location.href = result.data.url as string;
+                return;
+            }
+            // eslint-disable-next-line no-alert
+            alert('Failed to get Google OAuth URL.');
+        } catch (error) {
+            // eslint-disable-next-line no-console
+            console.error('Error starting Google login:', error);
+            // eslint-disable-next-line no-alert
+            alert('Unexpected error starting Google login.');
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: 600, margin: '40px auto', padding: 24 }}>
+            <h1 style={{ fontSize: 24, fontWeight: 700, marginBottom: 16 }}>Google Login Test</h1>
+            <p style={{ marginBottom: 16 }}>
+                Click the button below to start the Google OAuth flow. You should be redirected back to{' '}
+                <code>/auth/google/callback</code> with a code.
+            </p>
+            <button
+                onClick={handleGoogleLogin}
+                style={{
+                    padding: '10px 16px',
+                    borderRadius: 8,
+                    background: '#1a73e8',
+                    color: '#fff',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                }}
+            >
+                Sign in with Google
+            </button>
+            <div style={{ marginTop: 24, fontSize: 12, color: '#666' }}>
+                <p>
+                    Callback will be handled at <code>/auth/google/callback</code>.
+                </p>
+            </div>
+        </div>
+    );
+}
+```
 
 #### API Routes Available
 
