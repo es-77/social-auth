@@ -5,6 +5,7 @@ namespace EmmanuelSaleem\SocialAuth\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;
@@ -159,7 +160,12 @@ class SocialAuthController extends Controller
      */
     public function redirectToMicrosoft()
     {
-        return $this->buildMicrosoftDriver()->stateless()->redirect();
+        $driver = $this->buildMicrosoftDriver();
+        $scopes = (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []);
+        if (!empty($scopes)) {
+            $driver->scopes($scopes);
+        }
+        return $driver->stateless()->redirect();
     }
 
     /**
@@ -191,7 +197,12 @@ class SocialAuthController extends Controller
             ],
         ]);
 
-        return Socialite::driver('microsoft');
+        $driver = Socialite::driver('microsoft');
+        $scopes = (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []);
+        if (!empty($scopes)) {
+            $driver->scopes($scopes);
+        }
+        return $driver;
     }
 
     /**
@@ -232,6 +243,73 @@ class SocialAuthController extends Controller
             \Log::error('Stack trace: ' . $e->getTraceAsString());
             return \redirect()->route('emmanuel-saleem.social-auth.login')
                 ->with('error', 'Failed to login with Microsoft: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Separate Microsoft OAuth flow that also fetches Microsoft Graph profile using the access token
+     */
+    public function redirectToMicrosoftGraph()
+    {
+        return $this->buildMicrosoftDriver()->stateless()->redirect();
+    }
+
+    /**
+     * Handle Microsoft OAuth callback and call Microsoft Graph /me
+     */
+    public function handleMicrosoftGraphCallback(Request $request)
+    {
+        try {
+            $microsoftUser = $this->buildMicrosoftDriver()->stateless()->user();
+
+            $userModel = \config('emmanuel-saleem-social-auth.user_model', 'App\\Models\\User');
+            $user = $userModel::where('microsoft_id', $microsoftUser->id)
+                       ->orWhere('email', $microsoftUser->email)
+                       ->first();
+
+            if ($user) {
+                $user->update([
+                    'microsoft_id' => $microsoftUser->id,
+                    'avatar' => $microsoftUser->avatar,
+                    'microsoft_token' => $microsoftUser->token,
+                    'microsoft_refresh_token' => $microsoftUser->refreshToken,
+                ]);
+            } else {
+                $extra = (array) $request->session()->pull('social_auth.extra', []);
+                $payload = UserDataMapper::prepare($microsoftUser, 'microsoft');
+                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+            }
+
+            Auth::login($user, true);
+
+            // Use the OAuth access token to call Microsoft Graph APIs
+            $graphMeResponse = Http::withToken($microsoftUser->token)
+                ->get('https://graph.microsoft.com/v1.0/me');
+
+            $graphData = [];
+            if ($graphMeResponse->ok()) {
+                $graphData['profile'] = $graphMeResponse->json();
+            }
+
+            // Fetch contacts if Contacts.Read permission is available
+            $contactsResponse = Http::withToken($microsoftUser->token)
+                ->get('https://graph.microsoft.com/v1.0/me/contacts');
+
+            if ($contactsResponse->ok()) {
+                $graphData['contacts'] = $contactsResponse->json();
+            }
+
+            // Store all Graph data in session for downstream use
+            if (!empty($graphData)) {
+                $request->session()->put('microsoft.graph', $graphData);
+            }
+
+            return \redirect()->intended(\config('emmanuel-saleem-social-auth.redirect_after_login'));
+        } catch (\Exception $e) {
+            \Log::error('Microsoft OAuth Graph Error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return \redirect()->route('emmanuel-saleem.social-auth.login')
+                ->with('error', 'Failed to login with Microsoft Graph: ' . $e->getMessage());
         }
     }
 }

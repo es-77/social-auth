@@ -84,6 +84,9 @@ return [
         // API-first flow: set a separate redirect URI that points to your frontend SPA
         // Example: https://frontend.example.com/oauth/microsoft/callback
         'api_redirect' => env('MICROSOFT_API_REDIRECT_URI'),
+        // Scopes to request from Microsoft identity platform (Graph)
+        // Defaults include basic profile, contacts, and email access
+        'scopes' => explode(',', env('MICROSOFT_SCOPES', 'offline_access,User.Read,profile,email,Contacts.Read')),
     ],
 
     /*

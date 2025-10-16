@@ -30,6 +30,13 @@ Route::group([
     
     Route::get('/social-auth/microsoft/callback', [SocialAuthController::class, 'handleMicrosoftCallback'])
         ->name('emmanuel-saleem.social-auth.microsoft.callback');
+
+    // Separate Microsoft Graph flow (keeps existing one intact)
+    Route::get('/social-auth/microsoft-graph', [SocialAuthController::class, 'redirectToMicrosoftGraph'])
+        ->name('emmanuel-saleem.social-auth.microsoft.graph');
+
+    Route::get('/social-auth/microsoft-graph/callback', [SocialAuthController::class, 'handleMicrosoftGraphCallback'])
+        ->name('emmanuel-saleem.social-auth.microsoft.graph.callback');
     
     // Logout
     Route::post('/social-auth/logout', [SocialAuthController::class, 'logout'])

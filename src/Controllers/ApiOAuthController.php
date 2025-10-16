@@ -57,7 +57,12 @@ class ApiOAuthController extends Controller
             ],
         ]);
 
-        return Socialite::driver('microsoft');
+        $driver = Socialite::driver('microsoft');
+        $scopes = (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []);
+        if (!empty($scopes)) {
+            $driver->scopes($scopes);
+        }
+        return $driver;
     }
     /**
      * Get Google OAuth authorization URL
