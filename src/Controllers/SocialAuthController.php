@@ -199,7 +199,17 @@ class SocialAuthController extends Controller
         if (!empty($scopes)) {
             $driver->scopes($scopes);
         }
-        return $driver->stateless()->redirect();
+        $response = $driver->stateless()->redirect();
+        try {
+            $targetUrl = $response->getTargetUrl();
+        } catch (\Throwable $e) {
+            $targetUrl = null;
+        }
+        \Log::info('Microsoft OAuth redirect (web) generated', [
+            'target_url' => $targetUrl,
+            'scopes' => $scopes,
+        ]);
+        return $response;
     }
 
     /**
@@ -241,6 +251,12 @@ class SocialAuthController extends Controller
             $serviceConfig['tenant'] = $tenant;
         }
 
+        \Log::info('Microsoft OAuth driver configuration (web)', [
+            'redirect' => $serviceConfig['redirect'] ?? null,
+            'tenant' => $serviceConfig['tenant'] ?? null,
+            'scopes' => (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []),
+        ]);
+
         \config(['services.microsoft' => $serviceConfig]);
 
         $driver = Socialite::driver('microsoft');
@@ -257,6 +273,13 @@ class SocialAuthController extends Controller
     public function handleMicrosoftCallback()
     {
         try {
+            \Log::info('Microsoft OAuth callback (web) received', [
+                'query' => request()->query(),
+                'has_code' => request()->has('code'),
+                'has_state' => request()->has('state'),
+                'error' => request()->get('error'),
+                'error_description' => request()->get('error_description'),
+            ]);
             if (request()->has('error')) {
                 $error = request()->get('error');
                 $desc = request()->get('error_description');
@@ -269,6 +292,7 @@ class SocialAuthController extends Controller
                 return \redirect()->route('emmanuel-saleem.social-auth.login')
                     ->with('error', 'Failed to login with Microsoft: missing authorization code.');
             }
+            \Log::info('Microsoft OAuth token exchange starting (web)');
             // Use stateless for web to avoid session state issues
             $microsoftUser = $this->buildMicrosoftDriver()->stateless()->user();
             

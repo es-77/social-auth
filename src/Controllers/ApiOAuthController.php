@@ -80,6 +80,12 @@ class ApiOAuthController extends Controller
             $serviceConfig['tenant'] = $tenant;
         }
 
+        \Log::info('Microsoft OAuth driver configuration (api)', [
+            'redirect' => $serviceConfig['redirect'] ?? null,
+            'tenant' => $serviceConfig['tenant'] ?? null,
+            'scopes' => (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []),
+        ]);
+
         \config(['services.microsoft' => $serviceConfig]);
 
         $driver = Socialite::driver('microsoft');
@@ -204,10 +210,12 @@ class ApiOAuthController extends Controller
     public function getMicrosoftAuthUrl(): JsonResponse
     {
         try {
-            $url = $this->buildMicrosoftDriver()
-                ->stateless()
-                ->redirect()
-                ->getTargetUrl();
+            $driver = $this->buildMicrosoftDriver()->stateless();
+            $response = $driver->redirect();
+            $url = $response->getTargetUrl();
+            \Log::info('Microsoft OAuth redirect (api) generated', [
+                'target_url' => $url,
+            ]);
 
             return $this->successResponse([
                 'url' => $url,
@@ -231,6 +239,11 @@ class ApiOAuthController extends Controller
     public function handleMicrosoftCallback(Request $request): JsonResponse
     {
         try {
+            \Log::info('Microsoft OAuth callback (api) received', [
+                'input' => $request->all(),
+                'has_code' => $request->has('code'),
+                'has_state' => $request->has('state'),
+            ]);
             // Validate incoming code and optional extra fields
             $requiredFields = (array) \config('emmanuel-saleem-social-auth.required_fields', []);
             $rules = [
@@ -244,6 +257,7 @@ class ApiOAuthController extends Controller
             $validated = $request->validate($rules);
 
             // Exchange code for user info
+            \Log::info('Microsoft OAuth token exchange starting (api)');
             $microsoftUser = $this->buildMicrosoftDriver()
                 ->stateless()
                 ->user();
