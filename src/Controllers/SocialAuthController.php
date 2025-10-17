@@ -14,6 +14,40 @@ use EmmanuelSaleem\SocialAuth\Support\UserDataMapper;
 class SocialAuthController extends Controller
 {
     /**
+     * Determine if a URL string is absolute (has a scheme and host)
+     */
+    protected function isAbsoluteUrl(?string $url): bool
+    {
+        if (empty($url)) {
+            return false;
+        }
+        $parts = \parse_url($url);
+        return !empty($parts['scheme']) && !empty($parts['host']);
+    }
+
+    /**
+     * Resolve absolute redirect URI for the given route name when needed
+     */
+    protected function resolveAbsoluteRedirect(string $configuredRedirect, string $fallbackRouteName): string
+    {
+        if ($this->isAbsoluteUrl($configuredRedirect)) {
+            return $configuredRedirect;
+        }
+
+        // Build absolute URL to the package callback route as a safe fallback
+        try {
+            return \route($fallbackRouteName);
+        } catch (\Throwable $e) {
+            // Last resort, return configured value (may still error at provider)
+            \Log::warning('Microsoft redirect not absolute and route generation failed', [
+                'configured' => $configuredRedirect,
+                'route' => $fallbackRouteName,
+                'exception' => $e->getMessage(),
+            ]);
+            return $configuredRedirect;
+        }
+    }
+    /**
      * Redirect to Google OAuth
      */
     public function redirectToGoogle()
@@ -189,13 +223,25 @@ class SocialAuthController extends Controller
      */
     protected function buildMicrosoftDriver()
     {
-        \config([
-            'services.microsoft' => [
-                'client_id' => \config('emmanuel-saleem-social-auth.microsoft.client_id'),
-                'client_secret' => \config('emmanuel-saleem-social-auth.microsoft.client_secret'),
-                'redirect' => \config('emmanuel-saleem-social-auth.microsoft.redirect'),
-            ],
-        ]);
+        $configuredRedirect = (string) \config('emmanuel-saleem-social-auth.microsoft.redirect');
+        $redirect = $this->resolveAbsoluteRedirect(
+            $configuredRedirect,
+            'emmanuel-saleem.social-auth.microsoft.callback'
+        );
+
+        $tenant = \config('emmanuel-saleem-social-auth.microsoft.tenant');
+
+        $serviceConfig = [
+            'client_id' => \config('emmanuel-saleem-social-auth.microsoft.client_id'),
+            'client_secret' => \config('emmanuel-saleem-social-auth.microsoft.client_secret'),
+            'redirect' => $redirect,
+        ];
+
+        if (!empty($tenant)) {
+            $serviceConfig['tenant'] = $tenant;
+        }
+
+        \config(['services.microsoft' => $serviceConfig]);
 
         $driver = Socialite::driver('microsoft');
         $scopes = (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []);
@@ -211,6 +257,18 @@ class SocialAuthController extends Controller
     public function handleMicrosoftCallback()
     {
         try {
+            if (request()->has('error')) {
+                $error = request()->get('error');
+                $desc = request()->get('error_description');
+                \Log::error('Microsoft OAuth returned error', ['error' => $error, 'description' => $desc]);
+                return \redirect()->route('emmanuel-saleem.social-auth.login')
+                    ->with('error', 'Failed to login with Microsoft: ' . ($desc ?: $error));
+            }
+            if (!request()->has('code')) {
+                \Log::error('Microsoft OAuth missing authorization code on callback', ['query' => request()->query()]);
+                return \redirect()->route('emmanuel-saleem.social-auth.login')
+                    ->with('error', 'Failed to login with Microsoft: missing authorization code.');
+            }
             // Use stateless for web to avoid session state issues
             $microsoftUser = $this->buildMicrosoftDriver()->stateless()->user();
             

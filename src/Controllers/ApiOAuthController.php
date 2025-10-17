@@ -13,6 +13,17 @@ use EmmanuelSaleem\SocialAuth\Support\UserDataMapper;
 class ApiOAuthController extends Controller
 {
     /**
+     * Determine if a URL string is absolute (has a scheme and host)
+     */
+    protected function isAbsoluteUrl(?string $url): bool
+    {
+        if (empty($url)) {
+            return false;
+        }
+        $parts = \parse_url($url);
+        return !empty($parts['scheme']) && !empty($parts['host']);
+    }
+    /**
      * Get required fields configuration for clients
      */
     public function getRequiredFields(): JsonResponse
@@ -46,16 +57,30 @@ class ApiOAuthController extends Controller
      */
     protected function buildMicrosoftDriver()
     {
-        $redirect = \config('emmanuel-saleem-social-auth.microsoft.api_redirect')
-            ?: \config('emmanuel-saleem-social-auth.microsoft.redirect');
+        $redirect = (string) \config('emmanuel-saleem-social-auth.microsoft.api_redirect')
+            ?: (string) \config('emmanuel-saleem-social-auth.microsoft.redirect');
 
-        \config([
-            'services.microsoft' => [
-                'client_id' => \config('emmanuel-saleem-social-auth.microsoft.client_id'),
-                'client_secret' => \config('emmanuel-saleem-social-auth.microsoft.client_secret'),
-                'redirect' => $redirect,
-            ],
-        ]);
+        if (!$this->isAbsoluteUrl($redirect)) {
+            try {
+                $redirect = \url($redirect);
+            } catch (\Throwable $e) {
+                // keep as-is if URL helper fails
+            }
+        }
+
+        $tenant = \config('emmanuel-saleem-social-auth.microsoft.tenant');
+
+        $serviceConfig = [
+            'client_id' => \config('emmanuel-saleem-social-auth.microsoft.client_id'),
+            'client_secret' => \config('emmanuel-saleem-social-auth.microsoft.client_secret'),
+            'redirect' => $redirect,
+        ];
+
+        if (!empty($tenant)) {
+            $serviceConfig['tenant'] = $tenant;
+        }
+
+        \config(['services.microsoft' => $serviceConfig]);
 
         $driver = Socialite::driver('microsoft');
         $scopes = (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []);

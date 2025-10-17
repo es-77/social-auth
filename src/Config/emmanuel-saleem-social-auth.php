@@ -81,6 +81,8 @@ return [
         'client_id' => env('MICROSOFT_CLIENT_ID'),
         'client_secret' => env('MICROSOFT_CLIENT_SECRET'),
         'redirect' => env('MICROSOFT_REDIRECT_URI'),
+        // Optional: control authority tenant ('common', 'organizations', 'consumers' or a tenant GUID)
+        'tenant' => env('MICROSOFT_TENANT'),
         // API-first flow: set a separate redirect URI that points to your frontend SPA
         // Example: https://frontend.example.com/oauth/microsoft/callback
         'api_redirect' => env('MICROSOFT_API_REDIRECT_URI'),
