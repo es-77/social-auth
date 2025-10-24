@@ -255,6 +255,7 @@ class SocialAuthController extends Controller
             'redirect' => $serviceConfig['redirect'] ?? null,
             'tenant' => $serviceConfig['tenant'] ?? null,
             'scopes' => (array) \config('emmanuel-saleem-social-auth.microsoft.scopes', []),
+            'services_microsoft_config' => \config('services.microsoft', []),
         ]);
 
         \config(['services.microsoft' => $serviceConfig]);

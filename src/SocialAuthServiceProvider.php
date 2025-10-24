@@ -48,14 +48,11 @@ class SocialAuthServiceProvider extends ServiceProvider
      */
     protected function bootMicrosoftSocialite()
     {
-        $socialite = $this->app->make(Factory::class);
-        
-        $socialite->extend('microsoft', function ($app) use ($socialite) {
-            $config = $app['config']['services.microsoft'];
-            return $socialite->buildProvider(
-                \SocialiteProviders\Microsoft\Provider::class,
-                $config
-            );
-        });
+        // Register the Microsoft provider through the SocialiteProviders event system
+        // This ensures proper tenant handling and endpoint configuration
+        $this->app['events']->listen(
+            \SocialiteProviders\Manager\SocialiteWasCalled::class,
+            \SocialiteProviders\Microsoft\MicrosoftExtendSocialite::class.'@handle'
+        );
     }
 }
