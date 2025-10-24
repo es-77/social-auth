@@ -76,11 +76,22 @@ class SocialAuthController extends Controller
      */
     protected function buildGoogleDriver()
     {
+        $clientId = \config('emmanuel-saleem-social-auth.google.client_id');
+        $clientSecret = \config('emmanuel-saleem-social-auth.google.client_secret');
+        $redirect = \config('emmanuel-saleem-social-auth.google.redirect');
+
+        // Debug: Log Google configuration (without exposing secrets)
+        \Log::info('Google OAuth configuration', [
+            'client_id' => $clientId ? substr($clientId, 0, 10) . '...' : 'NOT_SET',
+            'client_secret' => $clientSecret ? 'SET' : 'NOT_SET',
+            'redirect' => $redirect,
+        ]);
+
         \config([
             'services.google' => [
-                'client_id' => \config('emmanuel-saleem-social-auth.google.client_id'),
-                'client_secret' => \config('emmanuel-saleem-social-auth.google.client_secret'),
-                'redirect' => \config('emmanuel-saleem-social-auth.google.redirect'),
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'redirect' => $redirect,
             ],
         ]);
 
