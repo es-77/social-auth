@@ -260,19 +260,87 @@ GOOGLE_REDIRECT_URI=http://localhost:8000/emmanuel-saleem/social-auth/google/cal
 
 #### Microsoft Azure Portal
 
+Follow these detailed steps to set up Microsoft OAuth authentication:
+
+**Step 1: Access Azure Portal**
 1. Go to [Azure Portal](https://portal.azure.com/)
-2. Navigate to Azure Active Directory → App registrations
-3. Click "New registration"
-4. **Redirect URI:** 
-   - Web: `http://localhost:8000/emmanuel-saleem/social-auth/microsoft/callback`
-   - API: `http://localhost:3000/auth/microsoft/callback`
-5. Create client secret under Certificates & secrets
-6. **API permissions:** Microsoft Graph → Add permissions:
-   - openid
-   - profile
-   - email
-   - User.Read
-7. Grant admin consent
+2. Sign in with your Microsoft account
+
+![Azure Portal All Services](images/4_mir.png)
+
+**Step 2: Navigate to App Registrations**
+1. In the Azure portal, search for "App registrations" in the search bar
+2. Click on "App registrations" from the search results
+
+![App Registrations Search](images/5_mir.png)
+
+**Step 3: Create New App Registration**
+1. Click "New registration" button
+2. Fill in the application details:
+   - **Name**: Enter your application name (e.g., "Laravel Social Auth")
+   - **Supported account types**: Choose based on your needs:
+     - "Personal Microsoft accounts only" - for consumer apps
+     - "Accounts in any organizational directory and personal Microsoft accounts" - for broader access
+   - **Redirect URI**: Add your callback URL:
+     - Web: `http://localhost:8000/emmanuel-saleem/social-auth/microsoft/callback`
+     - API: `http://localhost:3000/auth/microsoft/callback`
+
+![New App Registration](images/1_mir.png)
+
+**Step 4: Configure Authentication**
+1. After creating the app, go to "Authentication" in the left menu
+2. Add your redirect URIs:
+   - `http://localhost:8000/emmanuel-saleem/social-auth/microsoft/callback`
+   - `https://yourdomain.com/emmanuel-saleem/social-auth/microsoft/callback` (for production)
+
+![Authentication Configuration](images/2_mir.png)
+
+**Step 5: Create Client Secret**
+1. Go to "Certificates & secrets" in the left menu
+2. Click "New client secret"
+3. Add a description and choose expiration period
+4. **Important**: Copy the secret value immediately (it won't be shown again)
+
+**Step 6: Configure API Permissions**
+1. Go to "API permissions" in the left menu
+2. Click "Add a permission"
+3. Select "Microsoft Graph"
+4. Choose "Delegated permissions"
+5. Add these permissions:
+   - `openid`
+   - `profile`
+   - `email`
+   - `User.Read`
+   - `offline_access`
+
+**Step 7: Grant Admin Consent**
+1. Click "Grant admin consent" button
+2. Confirm the permissions
+
+**Step 8: Get Your Credentials**
+1. Go to "Overview" in the left menu
+2. Copy the following values:
+   - **Application (client) ID**
+   - **Directory (tenant) ID** (if using specific tenant)
+
+![App Overview](images/3_mir.png)
+
+**Step 9: Update Your .env File**
+Add the Microsoft credentials to your `.env` file:
+
+```env
+# Microsoft OAuth
+MICROSOFT_CLIENT_ID=your-client-id-from-step-8
+MICROSOFT_CLIENT_SECRET=your-client-secret-from-step-5
+MICROSOFT_REDIRECT_URI=http://localhost:8000/emmanuel-saleem/social-auth/microsoft/callback
+MICROSOFT_TENANT_ID=consumers  # or your-tenant-id for specific tenant
+```
+
+**Important Notes:**
+- For **Personal Microsoft accounts only**, use `MICROSOFT_TENANT_ID=consumers`
+- For **All account types**, you can use `MICROSOFT_TENANT_ID=common` or leave it empty
+- Make sure your redirect URI matches exactly what you configured in Azure
+- The client secret expires based on your chosen expiration period
 
 ---
 
@@ -1492,6 +1560,70 @@ If you're on Laravel 8 or below, you need to upgrade Laravel or use an older ver
 ### Issue: "Class not found" error
 
 **Solution:** Make sure to run `composer dump-autoload`
+
+### Issue: Microsoft OAuth "invalid_client" error
+
+**Problem:**
+```
+Client error: `POST https://www.googleapis.com/oauth2/v4/token` resulted in a `401 Unauthorized` response: { "error": "invalid_client", "error_description": "Unauthorized" }
+```
+
+**Solution:** 
+1. **Check your credentials** in `.env` file:
+   ```env
+   MICROSOFT_CLIENT_ID=your-actual-client-id
+   MICROSOFT_CLIENT_SECRET=your-actual-client-secret
+   MICROSOFT_REDIRECT_URI=http://localhost:8000/emmanuel-saleem/social-auth/microsoft/callback
+   ```
+
+2. **Verify in Azure Portal**:
+   - Go to your app registration → Overview
+   - Copy the exact Application (client) ID
+   - Go to Certificates & secrets → Copy the exact client secret
+
+3. **Clear config cache**:
+   ```bash
+   php artisan config:clear
+   php artisan cache:clear
+   ```
+
+### Issue: Microsoft OAuth "userAudience" configuration error
+
+**Problem:**
+```
+The request is not valid for the application's 'userAudience' configuration. In order to use /common/ endpoint, the application must not be configured with 'Consumer' as the user audience.
+```
+
+**Solution:** 
+This happens when your Azure app is configured for "Personal Microsoft accounts only" but the OAuth request uses the `/common` endpoint.
+
+**Option 1: Change Azure App Configuration (Recommended)**
+1. Go to Azure Portal → Your App Registration → Authentication
+2. Change "Supported account types" to "Accounts in any organizational directory and personal Microsoft accounts"
+3. This allows the `/common` endpoint to work
+
+**Option 2: Use Consumer Endpoint**
+1. Keep "Personal Microsoft accounts only" in Azure
+2. Set in your `.env`:
+   ```env
+   MICROSOFT_TENANT_ID=consumers
+   ```
+3. Clear config cache:
+   ```bash
+   php artisan config:clear
+   ```
+
+### Issue: Role dropdown not saving selected value
+
+**Problem:** The role selected from the dropdown is not being saved to the database.
+
+**Solution:** This was fixed in the latest version. Make sure you're using the updated package and clear caches:
+```bash
+php artisan config:clear
+php artisan cache:clear
+```
+
+The package now properly merges form data in the correct order: `payload → user_defaults → extra` (where `extra` overrides defaults).
 
 ### Issue: Routes not working
 
