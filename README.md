@@ -51,29 +51,25 @@ A comprehensive Laravel package for OAuth social authentication with Google and 
 
 ### Step 1: Install via Composer
 
-**For Production (Stable Version):**
+**For Development (Current Available Version):**
 ```bash
-composer require emmanuel-saleem/social-auth:^1.0
-```
-
-**For Development (Latest Features):**
-```bash
-composer require emmanuel-saleem/social-auth:dev-master
+composer require emmanuel-saleem/social-auth:dev-master --no-cache
 ```
 
 **Alternative Installation Methods:**
 ```bash
-# Install specific version
-composer require emmanuel-saleem/social-auth:1.0.0
-
-# Install with version constraint
-composer require "emmanuel-saleem/social-auth:^1.0"
-
-# Install from GitHub (if not published to Packagist)
+# Install from GitHub directly
 composer require emmanuel-saleem/social-auth:dev-master --prefer-source
+
+# Add GitHub repository to composer.json (if needed)
+# Add this to your composer.json repositories section:
+# {
+#     "type": "vcs", 
+#     "url": "https://github.com/your-username/emmanuel-saleem-social-auth"
+# }
 ```
 
-> 📝 **Note:** If you're installing `dev-master`, make sure to add `"minimum-stability": "dev"` to your `composer.json` or use the `--prefer-stable` flag.
+> 📝 **Note:** The package is currently in development. Stable versions will be available after publishing to Packagist. Use `dev-master` for now.
 
 ### Step 2: Install Authentication System (for API routes)
 
