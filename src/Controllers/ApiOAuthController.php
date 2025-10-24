@@ -168,7 +168,10 @@ class ApiOAuthController extends Controller
                 // Create new user
                 $extra = (array) ($validated['extra'] ?? []);
                 $payload = UserDataMapper::prepare($googleUser, 'google');
-                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $userDefaults = (array) \config('emmanuel-saleem-social-auth.user_defaults', []);
+                
+                // Merge in order: payload -> user_defaults -> extra (extra should override defaults)
+                $user = $userModel::create(array_merge($payload, $userDefaults, $extra));
             }
 
             // Generate access token (Sanctum or Passport)
@@ -283,7 +286,10 @@ class ApiOAuthController extends Controller
                 // Create new user
                 $extra = (array) ($validated['extra'] ?? []);
                 $payload = UserDataMapper::prepare($microsoftUser, 'microsoft');
-                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $userDefaults = (array) \config('emmanuel-saleem-social-auth.user_defaults', []);
+                
+                // Merge in order: payload -> user_defaults -> extra (extra should override defaults)
+                $user = $userModel::create(array_merge($payload, $userDefaults, $extra));
             }
 
             // Generate access token (Sanctum or Passport)

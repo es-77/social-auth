@@ -113,7 +113,17 @@ class SocialAuthController extends Controller
                 // Create new user
                 $extra = (array) $request->session()->pull('social_auth.extra', []);
                 $payload = UserDataMapper::prepare($googleUser, 'google');
-                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $userDefaults = (array) \config('emmanuel-saleem-social-auth.user_defaults', []);
+                
+                // Debug: Log what's being merged
+                \Log::info('Google OAuth user creation data', [
+                    'extra_from_form' => $extra,
+                    'payload_from_oauth' => $payload,
+                    'user_defaults' => $userDefaults,
+                ]);
+                
+                // Merge in order: payload -> user_defaults -> extra (extra should override defaults)
+                $user = $userModel::create(array_merge($payload, $userDefaults, $extra));
             }
 
             Auth::login($user, true);
@@ -314,7 +324,10 @@ class SocialAuthController extends Controller
                 // Create new user
                 $extra = (array) request()->session()->pull('social_auth.extra', []);
                 $payload = UserDataMapper::prepare($microsoftUser, 'microsoft');
-                $user = $userModel::create(array_merge($payload, (array) \config('emmanuel-saleem-social-auth.user_defaults', []), $extra));
+                $userDefaults = (array) \config('emmanuel-saleem-social-auth.user_defaults', []);
+                
+                // Merge in order: payload -> user_defaults -> extra (extra should override defaults)
+                $user = $userModel::create(array_merge($payload, $userDefaults, $extra));
             }
 
             Auth::login($user, true);
