@@ -245,7 +245,22 @@ class SocialAuthController extends Controller
             $rules[$name] = !empty($field['required']) ? 'required' : 'nullable';
         }
         $validated = $request->validate($rules);
-        $request->session()->put('social_auth.extra', $validated['extra'] ?? []);
+        $extraData = $validated['extra'] ?? [];
+        
+        // Debug: Log what we're storing in session
+        \Log::info('Microsoft prepare login - storing extra data', [
+            'extra_data' => $extraData,
+            'session_id' => $request->session()->getId(),
+        ]);
+        
+        $request->session()->put('social_auth.extra', $extraData);
+        
+        // Verify it was stored
+        $stored = $request->session()->get('social_auth.extra', []);
+        \Log::info('Microsoft prepare login - verification', [
+            'stored_data' => $stored,
+        ]);
+        
         return $this->redirectToMicrosoft();
     }
 
@@ -292,25 +307,25 @@ class SocialAuthController extends Controller
     /**
      * Handle Microsoft OAuth callback
      */
-    public function handleMicrosoftCallback()
+    public function handleMicrosoftCallback(Request $request)
     {
         try {
             \Log::info('Microsoft OAuth callback (web) received', [
-                'query' => request()->query(),
-                'has_code' => request()->has('code'),
-                'has_state' => request()->has('state'),
-                'error' => request()->get('error'),
-                'error_description' => request()->get('error_description'),
+                'query' => $request->query(),
+                'has_code' => $request->has('code'),
+                'has_state' => $request->has('state'),
+                'error' => $request->get('error'),
+                'error_description' => $request->get('error_description'),
             ]);
-            if (request()->has('error')) {
-                $error = request()->get('error');
-                $desc = request()->get('error_description');
+            if ($request->has('error')) {
+                $error = $request->get('error');
+                $desc = $request->get('error_description');
                 \Log::error('Microsoft OAuth returned error', ['error' => $error, 'description' => $desc]);
                 return \redirect()->route('emmanuel-saleem.social-auth.login')
                     ->with('error', 'Failed to login with Microsoft: ' . ($desc ?: $error));
             }
-            if (!request()->has('code')) {
-                \Log::error('Microsoft OAuth missing authorization code on callback', ['query' => request()->query()]);
+            if (!$request->has('code')) {
+                \Log::error('Microsoft OAuth missing authorization code on callback', ['query' => $request->query()]);
                 return \redirect()->route('emmanuel-saleem.social-auth.login')
                     ->with('error', 'Failed to login with Microsoft: missing authorization code.');
             }
@@ -333,9 +348,18 @@ class SocialAuthController extends Controller
                 ]);
             } else {
                 // Create new user
-                $extra = (array) request()->session()->pull('social_auth.extra', []);
+                $extra = (array) $request->session()->pull('social_auth.extra', []);
                 $payload = UserDataMapper::prepare($microsoftUser, 'microsoft');
                 $userDefaults = (array) \config('emmanuel-saleem-social-auth.user_defaults', []);
+                
+                // Debug: Log what's being merged
+                \Log::info('Microsoft OAuth user creation data', [
+                    'session_id' => $request->session()->getId(),
+                    'extra_from_form' => $extra,
+                    'payload_from_oauth' => $payload,
+                    'user_defaults' => $userDefaults,
+                    'final_merged_data' => array_merge($payload, $userDefaults, $extra),
+                ]);
                 
                 // Merge in order: payload -> user_defaults -> extra (extra should override defaults)
                 $user = $userModel::create(array_merge($payload, $userDefaults, $extra));
