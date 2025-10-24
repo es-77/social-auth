@@ -5,6 +5,7 @@ A comprehensive Laravel package for OAuth social authentication with Google and 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Laravel](https://img.shields.io/badge/Laravel-8%20%7C%209%20%7C%2010%20%7C%2011-red.svg)](https://laravel.com)
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-blue.svg)](https://php.net)
+[![Version](https://img.shields.io/badge/Version-1.0.0-green.svg)](https://packagist.org/packages/emmanuel-saleem/social-auth)
 
 ## 📚 Table of Contents
 
@@ -50,9 +51,29 @@ A comprehensive Laravel package for OAuth social authentication with Google and 
 
 ### Step 1: Install via Composer
 
+**For Production (Stable Version):**
 ```bash
-composer require emmanuel-saleem/social-auth
+composer require emmanuel-saleem/social-auth:^1.0
 ```
+
+**For Development (Latest Features):**
+```bash
+composer require emmanuel-saleem/social-auth:dev-master
+```
+
+**Alternative Installation Methods:**
+```bash
+# Install specific version
+composer require emmanuel-saleem/social-auth:1.0.0
+
+# Install with version constraint
+composer require "emmanuel-saleem/social-auth:^1.0"
+
+# Install from GitHub (if not published to Packagist)
+composer require emmanuel-saleem/social-auth:dev-master --prefer-source
+```
+
+> 📝 **Note:** If you're installing `dev-master`, make sure to add `"minimum-stability": "dev"` to your `composer.json` or use the `--prefer-stable` flag.
 
 ### Step 2: Install Authentication System (for API routes)
 
@@ -1524,6 +1545,30 @@ curl -X POST http://localhost:8000/api/emmanuel-saleem/auth/google/callback \
 
 ## 🐛 Troubleshooting
 
+### Issue: Package installs as dev-master instead of stable version
+
+**Problem:**
+When running `composer require emmanuel-saleem/social-auth`, it installs `dev-master` instead of a stable version.
+
+**Solution:** 
+1. **Specify version constraint explicitly:**
+   ```bash
+   composer require emmanuel-saleem/social-auth:^1.0
+   ```
+
+2. **Or install specific version:**
+   ```bash
+   composer require emmanuel-saleem/social-auth:1.0.0
+   ```
+
+3. **Check your composer.json minimum-stability:**
+   ```json
+   {
+       "minimum-stability": "stable",
+       "prefer-stable": true
+   }
+   ```
+
 ### Issue: Composer cache directory not writable (Docker)
 
 **Problem:**
@@ -1537,10 +1582,10 @@ Cannot create cache directory /.cache/composer/, or directory is not writable
 docker exec -it your-container chown -R www-data:www-data /.cache
 
 # Option 2: Run composer without cache
-composer require emmanuel-saleem/social-auth --no-cache
+composer require emmanuel-saleem/social-auth:^1.0 --no-cache
 
 # Option 3: Run as the correct user
-docker exec -it -u www-data your-container composer require emmanuel-saleem/social-auth
+docker exec -it -u www-data your-container composer require emmanuel-saleem/social-auth:^1.0
 ```
 
 ### Issue: Laravel version conflict

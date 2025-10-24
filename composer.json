@@ -3,6 +3,7 @@
     "description": "Laravel social authentication package with Google, Microsoft and more OAuth providers using Socialite",
     "type": "library",
     "license": "MIT",
+    "version": "1.0.0",
     "autoload": {
         "psr-4": {
             "EmmanuelSaleem\\SocialAuth\\": "src/"
